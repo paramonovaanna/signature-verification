@@ -1,6 +1,7 @@
 import json
 from collections import OrderedDict
 from pathlib import Path
+import os
 
 ROOT_PATH = Path(__file__).absolute().resolve().parent.parent.parent
 
@@ -14,6 +15,7 @@ def read_json(fname):
         json (list[OrderedDict] | OrderedDict): loaded json.
     """
     fname = Path(fname)
+    assert os.path.isfile(fname)
     with fname.open("rt") as handle:
         return json.load(handle, object_hook=OrderedDict)
 
