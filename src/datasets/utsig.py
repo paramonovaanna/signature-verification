@@ -1,0 +1,100 @@
+import kagglehub
+import os
+import shutil
+
+import random
+
+import tqdm
+
+from src.utils.io_utils import ROOT_PATH, read_json, write_json
+from src.datasets.basedataset import BaseDataset
+
+
+class UTSig:
+
+    def __init__(self, genuine_num=2, skilled_num=3, split=0, shuffle=True, *args, **kwargs):
+        self.genuine_num = min(genuine_num, 27)
+        self.skilled_num = min(skilled_num, 6)
+
+        self.dataset_path = ROOT_PATH / "data" / "UTSig"
+        if not self.dataset_path.exist():
+            self.download_dataset()
+
+        dataset_config = f"{genuine_num}_{skilled_num}"
+        index_path = ROOT_PATH / "data" / "UTSig" / f"index_{dataset_config}.json"
+
+        if index_path.exists():
+            self._index = read_json(str(index_path))
+        else:
+            self._index = self._generate_index(index_path)
+
+        train_index, test_index = self._split_index(split, shuffle)
+        self.train, self.test = BaseDataset(train_index, args), BaseDataset(test_index, args)
+
+    def get_train(self):
+        if hasattr(self, "train"):
+            return self.train
+        raise AttributeError("Train data has not been created")
+    
+    def get_test(self):
+        if hasattr(self, "test"):
+            return self.test
+        raise AttributeError("Test data has not been created")
+
+    def download_dataset(self):
+        path = kagglehub.dataset_download("sinjinir1999/utsignature-verification")
+        custom_path = "../../data/UTSig"
+        # Ensure the custom directory exists
+        os.makedirs(custom_path, exist_ok=True)
+        # Move downloaded dataset to the custom path
+        shutil.move(path, custom_path)
+
+    def _generate_index(self, index_path):
+        '''
+        Returns index (list of dicts) with genuine_num genuine signatures 
+        and forged_num forged signatures of each person
+        '''
+
+        index = []
+
+        genuine_dir = self.dataset_path / "genuine"
+        genuine_subdirs = os.listdir(genuine_dir)
+        print("Parsing genuine signatures into index...")
+        for i in tqdm(len(genuine_subdirs)):
+            person_path = genuine_dir / genuine_subdirs[i]
+            if not os.path.isdir(person_path):
+                continue
+
+            genuine_files = random.sample(sorted(os.listdir(person_path)), self.genuine_num)
+            for file in genuine_files:
+                index.append({
+                    'path': person_path / file,
+                    'label': 1  # Genuine signatures labeled as 1
+                })
+
+        skilled_dir = self.dataset_path / "forged" / "skilled"
+        skilled_subdirs = os.listdir(skilled_dir)
+        print("Parsing skilled forgeries into index...")
+        for i in tqdm(len(skilled_subdirs)):
+            person_path = skilled_dir / skilled_subdirs[i]
+            if not os.path.isdir(person_path):
+                continue
+
+            skilled_files = random.sample(sorted(os.listdir(person_path)), self.skilled_num)
+            for file in skilled_files:
+                index.append({
+                    'path': person_path / file,
+                    'label': 0
+                })
+        write_json(index, str(index_path))
+        return index
+    
+    def _split_index(self, split, shuffle):
+        if shuffle:
+            random.seed(42)
+            random.shuffle(self._index)
+
+        train_len = len(self._index) * split // 100
+        return self._index[:train_len], self._index[train_len:]
+
+
