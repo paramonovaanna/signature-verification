@@ -1,0 +1,11 @@
+defaults:
+   - datasets: utsig
+   - transforms: main
+   - dataloaders: main
+   - _self_
+
+trainer:
+   device: auto
+   seed: 42
+   split: 0.8
+   
