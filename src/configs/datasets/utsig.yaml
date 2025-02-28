@@ -3,3 +3,4 @@ genuine_num: 5
 skilled_num: 3
 opposite_num: 2
 simple_num: 1
+instance_transforms: ${transforms.instance_transforms}
