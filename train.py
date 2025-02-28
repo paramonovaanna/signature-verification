@@ -16,9 +16,7 @@ def main(config):
     else:
         device = config.trainer.device
 
-    #dataloaders, batch_transforms = get_dataloaders(config, device)
-    dataset = instantiate(config.datasets)
-    print(len(dataset))
+    dataloaders, batch_transforms = get_dataloaders(config, device)
 
 
 if __name__ == "__main__":
