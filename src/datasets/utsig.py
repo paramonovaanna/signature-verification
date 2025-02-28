@@ -13,9 +13,8 @@ from src.datasets.basedataset import BaseDataset
 class UTSig(BaseDataset):
 
     def __init__(self, genuine_num=2, skilled_num=3, opposite_num=0, simple_num=0, *args, **kwargs):
-        print("!!!!!!!!!!!!!!!!!!!!!")
         self.genuine_num = min(genuine_num, 27)
-        self.forged_num = {"skilled": min(skilled_num, 6), "opposite": min(opposite_num, 3), 
+        self.forged_num = {"skilled": min(skilled_num, 6), "opposite hand": min(opposite_num, 3), 
                            "simple": min(simple_num, 36)}
 
         self.dataset_path = ROOT_PATH / "data" / "UTSig"
