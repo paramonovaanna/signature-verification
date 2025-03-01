@@ -1,4 +1,3 @@
-from src.datasets import UTSig
 import hydra
 from hydra.utils import instantiate
 import torch
@@ -15,6 +14,8 @@ def main(config):
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
         device = config.trainer.device
+
+    model = instantiate(config.model._model_)
 
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
