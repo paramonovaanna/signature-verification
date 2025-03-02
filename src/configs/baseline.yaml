@@ -11,8 +11,21 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
+writer: 
+   _target_: src.logger.WandBWriter
+   project_name: "offline-signature-verification"
+   entity: null
+   run_name: "first-run"
+   mode: "online"
+   loss_names: ["loss"]
+   log_checkpoints: False
+   id_length: 8
+
 trainer:
-   device: auto
    seed: 42
    split: 0.8
+   device: auto
+   save_dir: "saved"
+   resume_from: null
+   override: False
    

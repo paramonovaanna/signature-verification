@@ -1,0 +1,1 @@
+from src.logger.wandb import WandBWriter
