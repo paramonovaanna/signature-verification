@@ -15,3 +15,6 @@ class ConvNeXt_T(nn.Module):
 
         n_features = self.model.classifier[2].in_features
         self.model.classifier = nn.Linear(n_features, 1)
+
+    def classifier_parameters(self):
+        return self.model.classifier.parameters()

@@ -54,7 +54,7 @@ def get_dataloaders(config, device):
 
     # dataset init
     dataset = instantiate(config.datasets)  # instance transforms are defined inside
-    train_size = int(len(dataset) * config.trainer.split)
+    train_size = int(len(dataset) * config.train_test_split)
     test_size = len(dataset) - train_size
 
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])

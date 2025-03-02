@@ -28,5 +28,9 @@ def main(config):
     loss = instantiate(config.loss).to(device)
     metrics = instantiate(config.metrics)
 
+    # freeze layers accept for the last one
+    optimizer = instantiate(config.optimizer, params=model.classifier_parameters())
+    lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
+
 if __name__ == "__main__":
     main()
