@@ -1,5 +1,4 @@
 _model_:
-  _target_: torchvision.models.convnext_tiny
-  weights: ConvNeXt_Tiny_Weights.IMAGENET1K_V1
+  _target_: src.models.ConvNeXt_T
 
 instance_transforms: ${transforms.instance_transforms.tiny}
