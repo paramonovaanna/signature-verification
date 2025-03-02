@@ -2,8 +2,21 @@ from hydra.utils import instantiate
 
 import torch
 
-#from src.datasets.collate import collate_fn
+from itertools import repeat
+
+from src.datasets.collate_fn import collate_fn
 from src.utils.init_utils import set_worker_seed
+
+def inf_loop(dataloader):
+    """
+    Wrapper function for endless dataloader.
+    Used for iteration-based training scheme.
+
+    Args:
+        dataloader (DataLoader): classic finite dataloader.
+    """
+    for loader in repeat(dataloader):
+        yield from loader
 
 
 def move_batch_transforms_to_device(batch_transforms, device):
@@ -73,6 +86,7 @@ def get_dataloaders(config, device):
         partition_dataloader = instantiate(
             config.dataloaders,
             dataset=dataset,
+            collate_fn=collate_fn,
             drop_last=(dataset_partition == "train"),
             shuffle=(dataset_partition == "train"),
             worker_init_fn=set_worker_seed,
