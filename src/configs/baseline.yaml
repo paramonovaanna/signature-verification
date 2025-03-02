@@ -36,8 +36,12 @@ lr_scheduler:
 trainer:
    seed: 42
    epoch_len: 500
+   n_epochs: 100
    log_step: 50
+   monitor: "max test_Accuracy"
+   early_stop: ${trainer.n_epochs}
    device: auto
+   device_tensors: ["img", "labels"]
    save_dir: "saved"
    resume_from: null
    override: False
