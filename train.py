@@ -15,9 +15,11 @@ def main(config):
     else:
         device = config.trainer.device
 
-    model = instantiate(config.model._model_)
+    model = instantiate(config.model._model_).to(device)
 
     dataloaders, batch_transforms = get_dataloaders(config, device)
+
+    loss = instantiate(config.loss).to(device)
 
 
 if __name__ == "__main__":

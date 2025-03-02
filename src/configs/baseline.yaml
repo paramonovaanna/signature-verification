@@ -2,6 +2,7 @@ defaults:
    - datasets: utsig
    - transforms: main
    - model: convnext-tiny
+   - loss: binary_loss
    - _self_
 
 dataloaders:
