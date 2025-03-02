@@ -1,0 +1,4 @@
+train: []
+inference:
+  - _target_: src.metrics.Accuracy
+    name: "Accuracy"

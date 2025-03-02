@@ -26,7 +26,7 @@ def main(config):
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
     loss = instantiate(config.loss).to(device)
-
+    metrics = instantiate(config.metrics)
 
 if __name__ == "__main__":
     main()

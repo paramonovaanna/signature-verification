@@ -3,6 +3,7 @@ defaults:
    - transforms: main
    - model: convnext-tiny
    - loss: binary_loss
+   - metrics: accuracy
    - _self_
 
 dataloaders:
