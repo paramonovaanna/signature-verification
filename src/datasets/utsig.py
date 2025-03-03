@@ -7,10 +7,10 @@ import random
 from tqdm import tqdm
 
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
-from src.datasets.basedataset import BaseDataset
+from src.datasets.base_downloader import BaseDownloader
 
 
-class UTSig(BaseDataset):
+class UTSig(BaseDownloader):
 
     def __init__(self, genuine_num=2, skilled_num=3, opposite_num=0, simple_num=0, *args, **kwargs):
         self.genuine_num = min(genuine_num, 27)

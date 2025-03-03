@@ -66,19 +66,18 @@ def get_dataloaders(config, device):
     move_batch_transforms_to_device(batch_transforms, device)
 
     # dataset init
-    dataset = instantiate(config.datasets)  # instance transforms are defined inside
-    train_size = int(len(dataset) * config.train_test_split)
-    test_size = len(dataset) - train_size
-
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
-    temp_dict = {"train": train_dataset, "test": test_dataset}
+    dataset_downloader = instantiate(config.dataset_downloaders)
+    instance_transforms = instantiate(config.model.instance_transforms)
+    datasets = dataset_downloader.get_partitions(
+        config.train_test_split.split, config.train_test_split.shuffle, instance_transforms
+    )
 
     # dataloaders init
     dataloaders = {}
-    for dataset_partition in temp_dict.keys():
-        dataset = temp_dict[dataset_partition]
+    for dataset_partition in datasets.keys():
+        dataset = datasets[dataset_partition]
 
-        assert config.dataloaders.batch_size <= len(dataset), (
+        assert config.dataloaders.batch_size <= len(datasets[dataset_partition]), (
             f"The batch size ({config.dataloaders.batch_size}) cannot "
             f"be larger than the dataset length ({len(dataset)})"
         )
