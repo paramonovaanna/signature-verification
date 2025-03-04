@@ -33,7 +33,8 @@ class UTSig(BaseDownloader):
 
     def download_dataset(self):
         path = kagglehub.dataset_download("sinjinir1999/utsignature-verification")
-        custom_path = "./data"
+        custom_path = ROOT_PATH / "data"
+        print("Extracting files into...", custom_path)
         # Ensure the custom directory exists
         os.makedirs(custom_path, exist_ok=True)
         # Move downloaded dataset to the custom path
