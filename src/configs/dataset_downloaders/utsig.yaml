@@ -1,7 +1,7 @@
 _target_: src.datasets.UTSig
-genuine_num: 5
-skilled_num: 3
-opposite_num: 2
-simple_num: 1
-limit: 15
+genuine_num: 15
+skilled_num: 6
+opposite_num: 1
+simple_num: 4
+limit: null
 shuffle_limit: True
