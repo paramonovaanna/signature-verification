@@ -14,8 +14,8 @@ class UTSig(BaseDownloader):
 
     def __init__(self, genuine_num=2, skilled_num=3, opposite_num=0, simple_num=0, *args, **kwargs):
         self.genuine_num = min(genuine_num, 27)
-        self.forged_num = {"skilled": min(skilled_num, 6), "opposite hand": min(opposite_num, 3), 
-                           "simple": min(simple_num, 36)}
+        self.forged_num = {"Skilled": min(skilled_num, 6), "Opposite hand": min(opposite_num, 3), 
+                           "Simple": min(simple_num, 36)}
 
         self.dataset_path = ROOT_PATH / "data" / "UTSig"
         if not self.dataset_path.exists():
@@ -49,7 +49,7 @@ class UTSig(BaseDownloader):
         path = ROOT_PATH / "data" / "UTSig" / "indexes"
         path.mkdir(exist_ok=True, parents=True)
 
-        genuine_dir = self.dataset_path / "genuine"
+        genuine_dir = self.dataset_path / "Genuine"
         genuine_subdirs = os.listdir(genuine_dir)
         print("Parsing genuine signatures into index...")
         for i in tqdm(range(len(genuine_subdirs))):
