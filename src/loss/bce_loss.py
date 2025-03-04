@@ -21,4 +21,4 @@ class BCEWithLogitsLoss(nn.Module):
         Returns:
             losses (dict): dict containing calculated loss functions.
         """
-        return {"loss": self.loss(logits, labels)}
+        return {"loss": self.loss(logits, labels.float())}
