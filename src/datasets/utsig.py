@@ -6,49 +6,59 @@ import random
 
 from tqdm import tqdm
 
+from pathlib import Path
+
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 from src.datasets.base_downloader import BaseDownloader
 
 
 class UTSig(BaseDownloader):
 
-    def __init__(self, genuine_num=2, skilled_num=3, opposite_num=0, simple_num=0, *args, **kwargs):
+    def __init__(self, genuine_num, skilled_num, opposite_num, simple_num, 
+                 path_download, index_dir, *args, **kwargs):
+
         self.genuine_num = min(genuine_num, 27)
         self.forged_num = {"Skilled": min(skilled_num, 6), "Opposite hand": min(opposite_num, 3), 
                            "Simple": min(simple_num, 36)}
 
-        self.dataset_path = ROOT_PATH / "data" / "UTSig"
+        if path_download is None:
+            path_download = ROOT_PATH / "data"
+        path_download = Path(path_download)
+        self.dataset_path = path_download / "UTSig"
         if not self.dataset_path.exists():
-            self.download_dataset()
+            self.download_dataset(path_download)
 
-        index_name = f"index_{genuine_num}_{skilled_num}.json"
-        index_path = ROOT_PATH / "data" / "UTSig" / "indexes"/ index_name
+        if index_dir is None:
+            index_dir = self.dataset_path / "indexes"
+        index_dir = Path(index_dir)
+        index_path = index_dir / f"index_{genuine_num}_{skilled_num}.json"
 
         if index_path.exists():
             self._index = read_json(str(index_path))
         else:
-            self._index = self._generate_index(index_name)
+            self._index = self._generate_index(index_dir, str(index_path))
 
         super().__init__(self._index, *args, **kwargs)
 
-    def download_dataset(self):
+    def download_dataset(self, path_download):
         path = kagglehub.dataset_download("sinjinir1999/utsignature-verification")
-        custom_path = ROOT_PATH / "data"
-        print("Extracting files into...", custom_path)
-        # Ensure the custom directory exists
-        os.makedirs(custom_path, exist_ok=True)
-        # Move downloaded dataset to the custom path
-        shutil.move(os.path.join(path, "UTSig"), custom_path)
+        if path_download == path:
+            return
 
-    def _generate_index(self, name):
+        print("Extracting files into...", path_download)
+        # Ensure the custom directory exists
+        os.makedirs(path_download, exist_ok=True)
+        # Move downloaded dataset to the custom path
+        shutil.move(os.path.join(path, "UTSig"), path_download)
+
+    def _generate_index(self, index_dir, index_path):
         '''
         Returns index (list of dicts) with genuine_num genuine signatures 
         and forged_num forged signatures of each person
         '''
 
         index = []
-        path = ROOT_PATH / "data" / "UTSig" / "indexes"
-        path.mkdir(exist_ok=True, parents=True)
+        index_dir.mkdir(exist_ok=True, parents=True)
 
         genuine_dir = self.dataset_path / "Genuine"
         genuine_subdirs = os.listdir(genuine_dir)
@@ -83,7 +93,7 @@ class UTSig(BaseDownloader):
                         'path': str(person_path / file),
                         'label': 0
                     })
-        write_json(index, str(path / name))
+        write_json(index, index_path)
         return index
 
 
