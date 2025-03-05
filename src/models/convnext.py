@@ -28,4 +28,8 @@ class ConvNeXt_T(nn.Module):
         return {"logits": self.model(img)}
 
     def classifier_parameters(self):
+        for param in self.model.parameters():
+            param.requires_grad = False
+        for param in self.model.classifier.parameters():
+            param.requires_grad = True
         return self.model.classifier.parameters()
