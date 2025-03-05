@@ -28,7 +28,7 @@ writer:
 
 optimizer: 
    _target_: torch.optim.AdamW
-   lr: 1e-4
+   lr: 1e-5
 
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
@@ -46,6 +46,7 @@ trainer:
    device_tensors: ["img", "labels"]
    save_dir: "saved"
    save_period: 5
+   max_grad_norm: 1
    resume_from: null
    override: False
    
