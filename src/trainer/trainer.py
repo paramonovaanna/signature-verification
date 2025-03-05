@@ -1,5 +1,6 @@
 from src.trainer.base_trainer import BaseTrainer
 from src.metrics.metric_tracker import MetricTracker
+import torch
 
 
 class Trainer(BaseTrainer):
@@ -38,6 +39,12 @@ class Trainer(BaseTrainer):
         outputs["logits"] = outputs["logits"].squeeze(1)
         batch.update(outputs)
 
+        if self.is_train:
+            self.writer.add_scalar("logits/mean", batch["logits"].mean().item())
+            self.writer.add_scalar("logits/std", batch["logits"].std().item())
+            self.writer.add_scalar("logits/min", batch["logits"].min().item())
+            self.writer.add_scalar("logits/max", batch["logits"].max().item())
+
         all_losses = self.criterion(**batch)
         batch.update(all_losses)
 
@@ -71,8 +78,33 @@ class Trainer(BaseTrainer):
         if mode == "train":
             img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
             self.writer.add_image("image", img)
+            
+            # Log predictions and labels
+            probs = torch.sigmoid(batch["logits"])
+            predictions = (probs > 0.5).float()
+            
+            self.writer.add_scalar("predictions/mean_prob", probs.mean().item())
+            self.writer.add_scalar("predictions/std_prob", probs.std().item())
+            self.writer.add_scalar("predictions/min_prob", probs.min().item())
+            self.writer.add_scalar("predictions/max_prob", probs.max().item())
+            self.writer.add_scalar("predictions/accuracy", (predictions == batch["labels"]).float().mean().item())
+            
+            pred_classes = predictions.cpu().numpy()
+            true_classes = batch["labels"].cpu().numpy()
+            self.writer.add_scalar("predictions/pred_class_0", (pred_classes == 0).mean())
+            self.writer.add_scalar("predictions/pred_class_1", (pred_classes == 1).mean())
+            self.writer.add_scalar("predictions/true_class_0", (true_classes == 0).mean())
+            self.writer.add_scalar("predictions/true_class_1", (true_classes == 1).mean())
+
+            if self.lr_scheduler is not None:
+                self.writer.add_scalar("learning_rate", self.lr_scheduler.get_last_lr()[0])
         else:
             img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
             self.writer.add_image("image", img)
+            
+            probs = torch.sigmoid(batch["logits"])
+            predictions = (probs > 0.5).float()
+            self.writer.add_scalar("test/pred_class_0", (predictions == 0).float().mean().item())
+            self.writer.add_scalar("test/pred_class_1", (predictions == 1).float().mean().item())
 
 

@@ -1,13 +1,11 @@
 import random
-
 import safetensors
 import safetensors.torch
 import torch
 from torch.utils.data import Dataset
-
 from PIL import Image
-
 import numpy as np
+from collections import Counter
 
 
 class BaseDataset(Dataset):
@@ -33,8 +31,15 @@ class BaseDataset(Dataset):
         """
         self._assert_index_is_valid(index)
         self._index = index
-
         self.instance_transforms = instance_transforms
+        
+        labels = [item["label"] for item in index]
+        label_counts = Counter(labels)
+        print(f"Class distribution: {label_counts}")
+        if len(label_counts) != 2:
+            raise ValueError(f"Expected 2 classes, got {len(label_counts)}")
+        if not all(label in [0, 1] for label in label_counts.keys()):
+            raise ValueError(f"Labels must be 0 or 1, got {label_counts.keys()}")
 
     def __getitem__(self, ind):
         """
@@ -77,11 +82,7 @@ class BaseDataset(Dataset):
         Returns:
             img (Tensor):
         """
-        img = Image.open(path).convert("L")
-
-        img_array = np.array(img)
-        rgb_img_array = np.stack([img_array] * 3, axis=-1)
-        img = Image.fromarray(rgb_img_array)
+        img = Image.open(path).convert("RGB")
         return img
 
     def preprocess_data(self, instance_data):
