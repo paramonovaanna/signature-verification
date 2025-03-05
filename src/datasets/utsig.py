@@ -79,7 +79,8 @@ class UTSig(BaseDownloader):
             if self.forged_num[type] <= 0:
                 continue
 
-            forged_dir = self.dataset_path / "Forgery" / type
+            forged_dir = self.dataset_path / "Forgery" / Path(type)
+            print(forged_subdirs)
             forged_subdirs = os.listdir(forged_dir)
             print(f"Parsing {type} forgeries into index...")
             for i in tqdm(range(len(forged_subdirs))):
