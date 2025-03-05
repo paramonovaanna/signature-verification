@@ -18,7 +18,7 @@ class UTSig(BaseDownloader):
                  path_download, index_dir, *args, **kwargs):
 
         self.genuine_num = min(genuine_num, 27)
-        self.forged_num = {"Skilled": min(skilled_num, 6), "'Opposite hand'": min(opposite_num, 3), 
+        self.forged_num = {"Skilled": min(skilled_num, 6), "Opposite Hand": min(opposite_num, 3), 
                            "Simple": min(simple_num, 36)}
 
         if path_download is None:
@@ -79,8 +79,7 @@ class UTSig(BaseDownloader):
             if self.forged_num[type] <= 0:
                 continue
 
-            forged_dir = Path(self.dataset_path / "Forgery" / type)
-            print(os.listdir(self.dataset_path / "Forgery"))
+            forged_dir = self.dataset_path / "Forgery" / type
             forged_subdirs = os.listdir(forged_dir)
             print(f"Parsing {type} forgeries into index...")
             for i in tqdm(range(len(forged_subdirs))):
