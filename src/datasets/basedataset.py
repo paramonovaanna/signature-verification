@@ -78,10 +78,6 @@ class BaseDataset(Dataset):
             img (Tensor):
         """
         img = Image.open(path).convert("L")
-
-        img_array = np.array(img)
-        rgb_img_array = np.stack([img_array] * 3, axis=-1)
-        img = Image.fromarray(rgb_img_array)
         return img
 
     def preprocess_data(self, instance_data):

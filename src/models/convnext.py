@@ -12,6 +12,9 @@ class ConvNeXt_T(nn.Module):
         else:
             weights = None
         self.model = convnext_tiny(weights=weights)
+        
+        # Change first layer to accept grayscale images
+        self.model.features[0][0] = nn.Conv2d(1, 96, kernel_size=(4, 4), stride=(4, 4))
 
         n_features = self.model.classifier[2].in_features
         self.model.classifier[2] = nn.Linear(n_features, 1)
