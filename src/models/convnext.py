@@ -17,7 +17,7 @@ class ConvNeXt_T(nn.Module):
         self.model.features[0][0] = nn.Conv2d(1, 96, kernel_size=(4, 4), stride=(4, 4))
 
         n_features = self.model.classifier[2].in_features
-        self.model.classifier[2] = nn.Linear(n_features, 1)
+        self.model.classifier[2] = nn.Linear(n_features, 2)
 
     def forward(self, img, **batch):
         """
