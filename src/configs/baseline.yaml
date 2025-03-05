@@ -2,7 +2,7 @@ defaults:
    - dataset_downloaders: utsig
    - transforms: main
    - model: convnext-tiny
-   - loss: binary_loss
+   - loss: cross_entropy_loss
    - metrics: accuracy
    - _self_
 
