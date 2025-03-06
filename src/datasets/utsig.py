@@ -29,7 +29,7 @@ class UTSig(BaseDownloader):
             self.download_dataset(path_download)
 
         if index_dir is None:
-            index_dir = self.dataset_path / "indexes"
+            index_dir = ROOT_PATH / "data" / "indexes" / "utsig"
         index_dir = Path(index_dir)
         index_path = index_dir / f"index_{genuine_num}_{skilled_num}.json"
 

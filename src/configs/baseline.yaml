@@ -1,5 +1,5 @@
 defaults:
-   - dataset_downloaders: utsig
+   - dataset_downloaders: gpds_synthetic
    - transforms: main
    - model: convnext-tiny
    - loss: cross_entropy_loss
