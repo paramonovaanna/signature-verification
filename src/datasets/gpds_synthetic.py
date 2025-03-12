@@ -2,6 +2,8 @@ from src.datasets.base_downloader import BaseDownloader
 from tqdm import tqdm
 import os
 
+from pathlib import Path
+
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 class GPDSSynthetic(BaseDownloader):
@@ -12,6 +14,7 @@ class GPDSSynthetic(BaseDownloader):
         
         if path_download is None:
             path_download = ROOT_PATH / "data"
+        path_download = Path(path_download)
         self.dataset_path = path_download / "GPDS_Synthetic"
         assert self.dataset_path.exists(), ("GPDS Synthetic Signature database cannot be downloaded from the internet. \
                                             For more information see https://gpds.ulpgc.es/downloadnew/download.htm")
