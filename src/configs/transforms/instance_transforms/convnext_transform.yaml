@@ -1,4 +1,4 @@
-tiny:
+convnext:
   img:
     _target_: torchvision.transforms.Compose
     transforms:
