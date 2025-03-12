@@ -1,10 +1,9 @@
-convnext:
-  img:
-    _target_: torchvision.transforms.Compose
-    transforms:
-      - _target_: torchvision.transforms.Resize
-        size: [224, 224]
-      - _target_: torchvision.transforms.ToTensor
-      - _target_: torchvision.transforms.Normalize
-        mean: [0.485]
-        std: [0.229]
+img:
+  _target_: torchvision.transforms.Compose
+  transforms:
+    - _target_: torchvision.transforms.Resize
+      size: [224, 224]
+    - _target_: torchvision.transforms.ToTensor
+    - _target_: torchvision.transforms.Normalize
+      mean: [0.485]
+      std: [0.229]
