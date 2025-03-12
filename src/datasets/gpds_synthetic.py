@@ -14,14 +14,14 @@ class GPDSSynthetic(BaseDownloader):
         
         if path_download is None:
             path_download = ROOT_PATH / "data"
-        path_download = Path(path_download)
-        self.dataset_path = path_download / "GPDS_Synthetic"
+
+        self.dataset_path = Path(path_download) / "GPDS_Synthetic"
         assert self.dataset_path.exists(), ("GPDS Synthetic Signature database cannot be downloaded from the internet. \
                                             For more information see https://gpds.ulpgc.es/downloadnew/download.htm")
         if index_dir is None:
             index_dir = ROOT_PATH / "data" / "indexes"
         
-        index_path = index_dir / "index.json"
+        index_path = Path(index_dir) / "index.json"
         if index_path.exists():
             self._index = read_json(str(index_path))
         else:
