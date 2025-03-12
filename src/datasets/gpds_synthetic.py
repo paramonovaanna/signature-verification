@@ -52,7 +52,7 @@ class GPDSSynthetic(BaseDownloader):
                     'label': 1
                 })
 
-            for j in range(GPDSSynthetic.GENUINE_EACH, GPDSSynthetic.FORGED_EACH):
+            for j in range(GPDSSynthetic.GENUINE_EACH, GPDSSynthetic.GENUINE_EACH + GPDSSynthetic.FORGED_EACH):
                 index.append({
                     'path': str(person_path / files[j]),
                     'label': 0
