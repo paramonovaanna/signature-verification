@@ -20,8 +20,8 @@ class GPDSSynthetic(BaseDownloader):
                                             For more information see https://gpds.ulpgc.es/downloadnew/download.htm")
         if index_dir is None:
             index_dir = ROOT_PATH / "data" / "indexes"
-        
-        index_path = Path(index_dir) / "index.json"
+        index_dir = Path(index_dir)
+        index_path = index_dir / "index.json"
         if index_path.exists():
             self._index = read_json(str(index_path))
         else:
