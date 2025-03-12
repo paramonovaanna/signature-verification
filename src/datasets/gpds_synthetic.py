@@ -8,8 +8,6 @@ from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 class GPDSSynthetic(BaseDownloader):
 
-    GENUINE_EACH, FORGED_EACH = 24, 30
-
     def __init__(self, path_download, index_dir, *args, **kwargs):
         
         if path_download is None:
@@ -46,17 +44,22 @@ class GPDSSynthetic(BaseDownloader):
                 continue
 
             files = os.listdir(person_path)
-            for j in range(GPDSSynthetic.GENUINE_EACH):
-                index.append({
-                    'path': str(person_path / files[j]),
-                    'label': 1
-                })
+            for filename in files:
+                name, extension = os.path.splitext(filename)
+                if extension == "mat":
+                    continue
 
-            for j in range(GPDSSynthetic.GENUINE_EACH, GPDSSynthetic.GENUINE_EACH + GPDSSynthetic.FORGED_EACH):
-                index.append({
-                    'path': str(person_path / files[j]),
-                    'label': 0
-                })
+                if name.startswith("c-"):
+                    index.append({
+                        'path': str(person_path / filename),
+                        'label': 1
+                    })
+
+                if name.startswith("cf-"):
+                    index.append({
+                        'path': str(person_path / filename),
+                        'label': 0
+                    })
 
         write_json(index, index_path)
         return index
