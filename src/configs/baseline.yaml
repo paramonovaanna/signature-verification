@@ -4,6 +4,8 @@ defaults:
    - model: convnext-tiny
    - loss: cross_entropy_loss
    - metrics: metrics
+   - writer: wandb
+   - trainer: trainer
    - _self_
 
 dataloaders:
@@ -15,16 +17,6 @@ dataloaders:
 train_test_split:
    split: 0.9
    shuffle: True
-
-writer: 
-   _target_: src.logger.WandBWriter
-   project_name: "offline-signature-verification"
-   entity: null
-   run_name: "first-run"
-   mode: "online"
-   loss_names: ["loss"]
-   log_checkpoints: False
-   id_length: 8
 
 optimizer: 
    _target_: torch.optim.AdamW
