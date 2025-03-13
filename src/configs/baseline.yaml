@@ -39,7 +39,7 @@ trainer:
    seed: 42
    epoch_len: null
    n_epochs: 60
-   log_step: 60
+   log_step: 250
    monitor: "max test_Accuracy"
    early_stop: ${trainer.n_epochs}
    device: auto
