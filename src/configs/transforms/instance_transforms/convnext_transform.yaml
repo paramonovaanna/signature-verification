@@ -3,7 +3,7 @@ img:
   transforms:
     - _target_: torchvision.transforms.Resize
       size: [224, 224]
-      interpolation: "bicubic"
+      interpolation: 3
     - _target_: torchvision.transforms.ToTensor
     - _target_: torchvision.transforms.Normalize
       mean: [0.449]
