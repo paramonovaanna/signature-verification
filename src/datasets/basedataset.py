@@ -37,7 +37,6 @@ class BaseDataset(Dataset):
         self._assert_index_is_valid(index)
         self._index = index
         self.instance_transforms = instance_transforms
-        self.debug_counter = 0  # Counter for debug logging
 
     def __getitem__(self, ind):
         """
@@ -58,30 +57,11 @@ class BaseDataset(Dataset):
         data_path = data_dict["path"]
 
         img = self.load_img(data_path)
-        
-        # Debug logging for raw image
-        if self.debug_counter < 5:  # Log only first 5 images
-            img_array = np.array(img)
-            logger.info(f"Raw image {self.debug_counter} stats:")
-            logger.info(f"  Shape: {img_array.shape}")
-            logger.info(f"  Min: {img_array.min()}, Max: {img_array.max()}")
-            logger.info(f"  Mean: {img_array.mean():.3f}, Std: {img_array.std():.3f}")
-            logger.info(f"  Unique values: {np.unique(img_array)}")
 
         label = data_dict["label"]
 
         instance_data = {"img": img, "labels": label}
         instance_data = self.preprocess_data(instance_data)
-
-        # Debug logging for processed image
-        if self.debug_counter < 5:
-            img_tensor = instance_data["img"]
-            logger.info(f"Processed image {self.debug_counter} stats:")
-            logger.info(f"  Shape: {img_tensor.shape}")
-            logger.info(f"  Min: {img_tensor.min():.3f}, Max: {img_tensor.max():.3f}")
-            logger.info(f"  Mean: {img_tensor.mean():.3f}, Std: {img_tensor.std():.3f}")
-            logger.info(f"  Unique values: {torch.unique(img_tensor)}")
-            self.debug_counter += 1
 
         return instance_data
 
