@@ -2,6 +2,13 @@ import hydra
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
 import torch
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 from src.datasets.data_utils import get_dataloaders
