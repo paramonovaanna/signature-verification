@@ -23,7 +23,7 @@ class EER(BaseMetric):
         Returns:
             EER (float): calculated metric.
         """
-        fpr, tpr, thresholds = roc_curve(labels, logits[:, 1], pos_label=1)
+        fpr, tpr, thresholds = roc_curve(labels.cpu().numpy(), logits[:, 1].cpu().numpy(), pos_label=1)
         fnr = 1 - tpr
 
         eer_index = np.nanargmin(np.abs(fnr - fpr))

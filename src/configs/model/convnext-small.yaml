@@ -1,4 +1,0 @@
-_model_:
-  _target_: src.models.ConvNeXt_S
-
-instance_transforms: ${transforms.instance_transforms}
