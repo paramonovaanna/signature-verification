@@ -8,22 +8,27 @@ from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
 class GPDSSynthetic(BaseDownloader):
 
-    def __init__(self, path_download, index_dir, *args, **kwargs):
+    def __init__(self, first_user, last_user, path_download, index_dir, *args, **kwargs):
+
+        assert 1 <= first_user <= last_user <= 4000
         
         if path_download is None:
             path_download = ROOT_PATH / "data"
-
         self.dataset_path = Path(path_download) / "GPDS_Synthetic"
         assert self.dataset_path.exists(), ("GPDS Synthetic Signature database cannot be downloaded from the internet. \
                                             For more information see https://gpds.ulpgc.es/downloadnew/download.htm")
+
         if index_dir is None:
             index_dir = ROOT_PATH / "data" / "indexes"
         index_dir = Path(index_dir)
-        index_path = index_dir / "index.json"
+        index_path = index_dir / f"index.json"
+    
         if index_path.exists():
             self._index = read_json(str(index_path))
         else:
             self._index = self._generate_index(index_dir, str(index_path))
+
+        self._index = self._limit_index(first_user, last_user)
 
         super().__init__(self._index, *args, **kwargs)
 
@@ -63,4 +68,16 @@ class GPDSSynthetic(BaseDownloader):
 
         write_json(index, index_path)
         return index
+    
+    def _extract_user_no(self, path):
+        filename = os.path.basename(path)
+        number = int(filename.split("-")[1])
+        return number
+    
+    def _limit_index(self, first_user, last_user):
+        index = sorted(self._index, key=lambda x: self._extract_user_no(x["path"]))
+        start = (first_user - 1) * 54
+        end = last_user * 54
+        return index[start:end]
+
 
