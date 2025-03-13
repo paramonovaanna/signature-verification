@@ -33,7 +33,6 @@ class BaseDataset(Dataset):
         """
         self._assert_index_is_valid(index)
         self._index = index
-
         self.instance_transforms = instance_transforms
 
     def __getitem__(self, ind):
