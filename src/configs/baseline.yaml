@@ -3,7 +3,7 @@ defaults:
    - transforms: main
    - model: convnext-tiny
    - loss: cross_entropy_loss
-   - metrics: accuracy
+   - metrics: metrics
    - _self_
 
 dataloaders:
