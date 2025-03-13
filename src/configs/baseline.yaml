@@ -8,12 +8,12 @@ defaults:
 
 dataloaders:
    _target_: torch.utils.data.DataLoader
-   batch_size: 16
+   batch_size: 32
    num_workers: 2
    pin_memory: True
 
 train_test_split:
-   split: 0.8
+   split: 0.9
    shuffle: True
 
 writer: 
@@ -32,14 +32,14 @@ optimizer:
 
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.9
-  step_size: ${trainer.epoch_len}
+  gamma: 0.5
+  step_size: 5
 
 trainer:
    seed: 42
-   epoch_len: 100
-   n_epochs: 500
-   log_step: 50
+   epoch_len: null
+   n_epochs: 50
+   log_step: 250
    monitor: "max test_Accuracy"
    early_stop: ${trainer.n_epochs}
    device: auto
