@@ -5,7 +5,7 @@ defaults:
    - loss: cross_entropy_loss
    - metrics: metrics
    - writer: wandb
-   - trainer: trainer
+   - lr_scheduler: step_lr
    - _self_
 
 dataloaders:
@@ -22,23 +22,18 @@ optimizer:
    _target_: torch.optim.AdamW
    lr: 1e-5
 
-lr_scheduler:
-  _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.5
-  step_size: 5
-
 trainer:
    seed: 42
    epoch_len: null
    n_epochs: 50
-   log_step: 250
+   log_step: 500
    monitor: "max test_Accuracy"
    early_stop: ${trainer.n_epochs}
    device: auto
    device_tensors: ["img", "labels"]
    save_dir: "saved"
    save_period: 5
-   max_grad_norm: 1
+   max_grad_norm: null
    resume_from: null
    override: False
    
