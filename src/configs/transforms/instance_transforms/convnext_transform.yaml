@@ -6,5 +6,5 @@ img:
       interpolation: 3
     - _target_: torchvision.transforms.ToTensor
     - _target_: torchvision.transforms.Normalize
-      mean: [0.449]
-      std: [0.226]
+      mean: [0.977]
+      std: [0.118]

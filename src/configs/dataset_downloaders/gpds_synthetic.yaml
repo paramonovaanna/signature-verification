@@ -1,6 +1,6 @@
 _target_: src.datasets.GPDSSynthetic
-first_user: 1
-last_user: 4000
+first_user: 301
+last_user: 1000
 path_download: null
 index_dir: null
 limit: null
