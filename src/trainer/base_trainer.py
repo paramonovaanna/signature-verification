@@ -130,13 +130,12 @@ class BaseTrainer:
         )
 
         # define checkpoint dir and init everything if required
-        '''self.checkpoint_dir = (
+        self.checkpoint_dir = (
             ROOT_PATH / config.trainer.save_dir / config.writer.run_name
-        )'''
+        )
 
         if config.trainer.get("resume_from") is not None:
-            self.checkpoint_dir = config.trainer.resume_from
-            resume_path = self.checkpoint_dir
+            resume_path = self.checkpoint_dir / config.trainer.resume_from
             self._resume_checkpoint(resume_path)
 
         if config.trainer.get("from_pretrained") is not None:
