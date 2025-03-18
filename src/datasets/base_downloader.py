@@ -26,6 +26,12 @@ class BaseDownloader:
         index = self._index[:limit]
         return index
     
+    def get_test_data(self, instance_transforms=None):
+        '''
+        Returns a dataset object for testing
+        '''
+        return {"test": BaseDataset(self._index, instance_transforms)}
+    
     def get_partitions(self, split, shuffle_split, instance_transforms=None):
         '''
         Returns a partitions dict object
