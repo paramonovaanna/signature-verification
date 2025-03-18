@@ -1,4 +1,6 @@
 _model_:
   _target_: src.models.ConvNeXt_T
 
+freeze_layers: null
+
 instance_transforms: ${transforms.instance_transforms}

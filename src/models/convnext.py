@@ -5,6 +5,9 @@ from torchvision.models import convnext_small, ConvNeXt_Small_Weights
 from torchvision.models import convnext_base, ConvNeXt_Base_Weights
 
 class ConvNeXt(nn.Module):
+    """
+    N_LAYERS = 8
+    """
 
     def __init__(self, base_model):
         super().__init__()
@@ -26,13 +29,14 @@ class ConvNeXt(nn.Module):
         """
         return {"logits": self.model(img)}
     
-    def classifier_parameters(self):
-        for param in self.model.parameters():
-            param.requires_grad = False
-        for param in self.model.classifier.parameters():
-            param.requires_grad = True
-        return self.model.classifier.parameters()
+    def freeze_layers(self, num_layers=None):
+        # замораживать слои, кроме классификатора
+        if num_layers is None:
+            return
+        assert (num_layers - 1) < len(self.model.features)
 
+        for param in self.model.features[:num_layers].parameters():
+            param.requires_grad = False
 
 class ConvNeXt_T(ConvNeXt):
 

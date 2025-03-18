@@ -22,6 +22,7 @@ def main(config):
         device = config.trainer.device
 
     model = instantiate(config.model._model_).to(device)
+    model.freeze_layers(config.model.freeze_layers)
     logger.info(model)
 
     dataloaders, batch_transforms = get_dataloaders(config, device)

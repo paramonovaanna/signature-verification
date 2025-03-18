@@ -3,4 +3,6 @@ _model_:
   model_name: "convnext_tiny.fb_in22k"
   use_pretrained: True
 
+freeze_layers: null
+
 instance_transforms: ${transforms.instance_transforms}
