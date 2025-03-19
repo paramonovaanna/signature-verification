@@ -17,6 +17,8 @@ class ConvNeXt_21k(nn.Module):
 
         # Change first layer to accept grayscale images
         self.model.stem[0] = nn.Conv2d(1, 96, kernel_size=(4, 4), stride=(4, 4))
+        print(self.model.stem[0].out_features)
+        print(self.model.stem[1].input_features)
 
         # Change classifier to classify into genuine and forged
         n_features = self.model.head.fc.in_features
