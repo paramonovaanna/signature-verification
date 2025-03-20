@@ -1,0 +1,19 @@
+defaults:
+  - model: convnext-tiny
+  - metrics: metrics
+  - dataset_downloaders: utsig # we do not want to run inference on training data
+  - transforms: main
+  - _self_
+
+dataloaders:
+   _target_: torch.utils.data.DataLoader
+   batch_size: 32
+   num_workers: 2
+   pin_memory: True
+
+inferencer:
+  device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
+  save_path: "utsig" # any name here, can be a dataset name
+  seed: 42
+  from_pretrained: "saved/freeze3_cosine/model_best.pth" # path to the pretrained model
