@@ -1,9 +1,26 @@
-img:
-  _target_: torchvision.transforms.Compose
-  transforms:
-    - _target_: torchvision.transforms.RandomCrop
-      size: 224
-    - _target_: torchvision.transforms.ToTensor
-    - _target_: torchvision.transforms.Normalize
-      mean: [0.977]
-      std: [0.118]
+train:
+  img:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [224, 224]
+        interpolation: 3
+      - _target_: torchvision.transforms.RandomCrop
+        size: 224
+      - _target_: torchvision.transforms.ToTensor
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.977]
+        std: [0.118]
+test:
+  img:
+    _target_: torchvision.transforms.Compose
+    transforms:
+      - _target_: torchvision.transforms.Resize
+        size: [224, 224]
+        interpolation: 3
+      - _target_: torchvision.transforms.CenterCrop
+        size: 224
+      - _target_: torchvision.transforms.ToTensor
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.977]
+        std: [0.118]

@@ -31,5 +31,5 @@ class BaseDownloader:
         Returns a partitions dict object
         '''
         train_index, test_index = self._random_split(split, shuffle_split)
-        return {"train": BaseDataset(train_index, instance_transforms), 
-                "test": BaseDataset(test_index, instance_transforms)}
+        return {"train": BaseDataset(train_index, instance_transforms["train"]), 
+                "test": BaseDataset(test_index, instance_transforms["test"])}
