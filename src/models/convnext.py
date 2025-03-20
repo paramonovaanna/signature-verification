@@ -15,10 +15,8 @@ class ConvNeXt(nn.Module):
         super().__init__()
         self.model = base_model
         
-        # Get the weights for the first conv layer
         if weights is not None:
             first_conv_weights = self.model.features[0][0].weight.data
-            # Average the weights across the RGB channels to create grayscale weights
             grayscale_weights = first_conv_weights.mean(dim=1, keepdim=True)
         
         # Change first layer to accept grayscale images
@@ -30,14 +28,8 @@ class ConvNeXt(nn.Module):
                                              stride=first_conv.stride,
                                              padding=first_conv.padding)
         
-        # If using pretrained weights, initialize the new conv layer with averaged weights
         if weights is not None:
             self.model.features[0][0].weight.data = grayscale_weights
-            
-        # Ensure proper normalization layers
-        for m in self.model.modules():
-            if isinstance(m, LayerNorm2d):
-                m.eps = 1e-6
 
         n_features = self.model.classifier[2].in_features
         self.model.classifier[2] = nn.Linear(n_features, 2)

@@ -1,6 +1,7 @@
 import timm
 
 from torch import nn
+from torchvision.models.convnext import LayerNorm2d
 
 class ConvNeXt_21k(nn.Module):
     """
@@ -15,10 +16,20 @@ class ConvNeXt_21k(nn.Module):
         super().__init__()
         self.model = timm.create_model(model_name, pretrained=use_pretrained)
 
-        # Change first layer to accept grayscale images
-        self.model.stem[0] = nn.Conv2d(1, 96, kernel_size=(4, 4), stride=(4, 4))
-        print(self.model.stem[0].out_features)
-        print(self.model.stem[1].input_features)
+        if use_pretrained:
+            first_conv_weights = self.model.stem[0].weight.data
+            grayscale_weights = first_conv_weights.mean(dim=1, keepdim=True)
+
+        in_chans = 1
+        first_conv = self.model.stem[0]
+        self.model.stem[0] = nn.Conv2d(in_chans, 
+                                             first_conv.out_channels, 
+                                             kernel_size=first_conv.kernel_size,
+                                             stride=first_conv.stride,
+                                             padding=first_conv.padding)
+        
+        if use_pretrained:
+            self.model.stem[0].weight.data = grayscale_weights
 
         # Change classifier to classify into genuine and forged
         n_features = self.model.head.fc.in_features
