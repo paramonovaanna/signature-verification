@@ -20,6 +20,7 @@ def main(config):
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
         device = config.trainer.device
+    logger.info(device)
 
     model = instantiate(config.model._model_).to(device)
     model.freeze_layers(config.model.freeze_layers)
