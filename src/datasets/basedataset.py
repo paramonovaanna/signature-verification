@@ -9,6 +9,9 @@ from PIL import Image
 
 import numpy as np
 
+from skimage.io import imread
+from skimage import img_as_ubyte
+
 
 class BaseDataset(Dataset):
     """
@@ -20,7 +23,7 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self, index, instance_transforms=None
+        self, index, instance_transforms=None, load_numpy=False
     ):
         """
         Args:
@@ -35,6 +38,7 @@ class BaseDataset(Dataset):
         self._index = index
 
         self.instance_transforms = instance_transforms
+        self.load_numpy = load_numpy
 
     def __getitem__(self, ind):
         """
@@ -54,7 +58,10 @@ class BaseDataset(Dataset):
         data_dict = self._index[ind]
         data_path = data_dict["path"]
 
-        img = self.load_img(data_path)
+        if self.load_numpy:
+            img = self.load_img_numpy(data_path)
+        else:
+            img = self.load_img(data_path)
         label = data_dict["label"]
 
         instance_data = {"img": img, "labels": label}
@@ -68,6 +75,18 @@ class BaseDataset(Dataset):
         """
         return len(self._index)
 
+    def load_img_numpy(self, path):
+        """
+        Load img from disk.
+
+        Args:
+            path (str): path to the object.
+        Returns:
+            img (np.ndarray):
+        """
+        img = imread(path, as_gray=True)
+        return img_as_ubyte(img)
+    
     def load_img(self, path):
         """
         Load img from disk.
