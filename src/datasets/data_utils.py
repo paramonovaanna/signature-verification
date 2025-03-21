@@ -111,8 +111,16 @@ def get_dataloaders(config, device):
     batch_transforms = instantiate(config.transforms.batch_transforms)
     move_batch_transforms_to_device(batch_transforms, device)
 
-    # dataset init
+    preprocessor = instantiate(config.preprocessor)
+
+    # dataset load
     dataset_downloader = instantiate(config.dataset_downloaders)
+    load_numpy = False
+    if preprocessor:
+        load_numpy = True
+    dataset_downloader.load(load_numpy)
+
+    # dataset init
     instance_transforms = instantiate(config.model.instance_transforms)
     datasets = dataset_downloader.get_partitions(
         config.train_test_split.split, config.train_test_split.shuffle, instance_transforms
@@ -122,6 +130,9 @@ def get_dataloaders(config, device):
     dataloaders = {}
     for dataset_partition in datasets.keys():
         dataset = datasets[dataset_partition]
+
+        if preprocessor:
+            dataset.preprocess_data(preprocessor)
 
         assert config.dataloaders.batch_size <= len(datasets[dataset_partition]), (
             f"The batch size ({config.dataloaders.batch_size}) cannot "

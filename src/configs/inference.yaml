@@ -3,6 +3,7 @@ defaults:
   - metrics: metrics
   - dataset_downloaders: utsig # we do not want to run inference on training data
   - transforms: main
+  - preprocessor: no_preprocessor
   - _self_
 
 dataloaders:

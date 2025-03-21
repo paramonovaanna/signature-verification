@@ -6,7 +6,10 @@ defaults:
    - metrics: metrics
    - writer: wandb
    - lr_scheduler: step_lr
+   - preprocessor: no_preprocessor
    - _self_
+
+preprocess: False
 
 dataloaders:
    _target_: torch.utils.data.DataLoader

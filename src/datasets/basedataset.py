@@ -5,12 +5,8 @@ import safetensors.torch
 import torch
 from torch.utils.data import Dataset
 
-from PIL import Image
 
-import numpy as np
-
-from skimage.io import imread
-from skimage import img_as_ubyte
+from tqdm import tqdm
 
 
 class BaseDataset(Dataset):
@@ -23,22 +19,21 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self, index, instance_transforms=None, load_numpy=False
+        self, data, instance_transforms=None
     ):
         """
         Args:
-            index (list[dict]): list, containing dict for each element of
+            data (list[dict]): list, containing dict for each element of
                 the dataset. The dict has required metadata information,
-                such as label and object path.
+                such as label and loaded image.
             instance_transforms (dict[Callable] | None): transforms that
                 should be applied on the instance. Depend on the
                 tensor name.
         """
-        self._assert_index_is_valid(index)
-        self._index = index
+        self._assert_data_is_valid(data)
+        self.data = data
 
         self.instance_transforms = instance_transforms
-        self.load_numpy = load_numpy
 
     def __getitem__(self, ind):
         """
@@ -55,17 +50,13 @@ class BaseDataset(Dataset):
             instance_data (dict): dict, containing instance
                 (a single dataset element).
         """
-        data_dict = self._index[ind]
-        data_path = data_dict["path"]
+        data_dict = self.data[ind]
 
-        if self.load_numpy:
-            img = self.load_img_numpy(data_path)
-        else:
-            img = self.load_img(data_path)
+        img = data_dict["img"]
         label = data_dict["label"]
 
         instance_data = {"img": img, "labels": label}
-        instance_data = self.preprocess_data(instance_data)
+        instance_data = self.transform_data(instance_data)
 
         return instance_data
 
@@ -75,31 +66,7 @@ class BaseDataset(Dataset):
         """
         return len(self._index)
 
-    def load_img_numpy(self, path):
-        """
-        Load img from disk.
-
-        Args:
-            path (str): path to the object.
-        Returns:
-            img (np.ndarray):
-        """
-        img = imread(path, as_gray=True)
-        return img_as_ubyte(img)
-    
-    def load_img(self, path):
-        """
-        Load img from disk.
-
-        Args:
-            path (str): path to the object.
-        Returns:
-            img (Tensor):
-        """
-        img = Image.open(path).convert("L")
-        return img
-
-    def preprocess_data(self, instance_data):
+    def transform_data(self, instance_data):
         """
         Preprocess data with instance transforms.
 
@@ -119,21 +86,27 @@ class BaseDataset(Dataset):
                     transform_name
                 ](instance_data[transform_name])
         return instance_data
+    
+    def preprocess_data(self, preprocessor):
+        print("Preprocessing images...")
+        for i in tqdm(range(len(self.data))):
+            img = self.data[i]["img"]
+            self.data[i]["img"] = preprocessor(img)
 
     @staticmethod
-    def _assert_index_is_valid(index):
+    def _assert_data_is_valid(data):
         """
-        Check the structure of the index and ensure it satisfies the desired
+        Check the structure of the data and ensure it satisfies the desired
         conditions.
 
         Args:
-            index (list[dict]): list, containing dict for each element of
+            data (list[dict]): list, containing dict for each element of
                 the dataset. The dict has required metadata information,
-                such as label and object path.
+                such as label and loaded image.
         """
-        for entry in index:
-            assert "path" in entry, (
-                "Each dataset item should include field 'path'" " - path to image file."
+        for entry in data:
+            assert "img" in entry, (
+                "Each dataset item should include field 'img'" " - a loaded image file."
             )
             assert "label" in entry, (
                 "Each dataset item should include field 'label'"
