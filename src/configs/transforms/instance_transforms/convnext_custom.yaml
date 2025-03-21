@@ -1,0 +1,30 @@
+train:
+  img:
+    _target_: src.transforms.HTCSigNetPreprocessor
+    transforms: 
+      _target_: torchvision.transforms.Compose
+      transforms: 
+        - _target_: torchvision.transforms.ToPILImage
+        - _target_: torchvision.transforms.RandomCrop
+          size: [224, 224]
+        - _target_: torchvision.transforms.ToTensor
+    canvas_size: [1100, 1900]
+    img_size: [256, 256]
+    input_size: [224, 224]
+  
+test:
+  img:
+    _target_: src.transforms.HTCSigNetPreprocessor
+    transforms: 
+      _target_: torchvision.transforms.Compose
+      transforms: 
+        - _target_: torchvision.transforms.ToPILImage
+        - _target_: torchvision.transforms.CenterCrop
+          size: [224, 224]
+        - _target_: torchvision.transforms.ToTensor
+    canvas_size: [1100, 1900]
+    img_size: [256, 256]
+    input_size: [224, 224]
+
+load_numpy: True
+  

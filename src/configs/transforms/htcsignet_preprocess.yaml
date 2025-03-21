@@ -1,0 +1,4 @@
+defaults:
+  - batch_transforms: main
+  - instance_transforms: convnext_custom
+  - _self_
