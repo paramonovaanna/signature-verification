@@ -30,7 +30,7 @@ class BaseDownloader:
         '''
         Returns a dataset object for testing
         '''
-        return {"test": BaseDataset(self._index, instance_transforms)}
+        return {"test": BaseDataset(self._index, instance_transforms["test"])}
     
     def get_partitions(self, split, shuffle_split, instance_transforms=None):
         '''
