@@ -1,4 +1,4 @@
 _target_: src.preprocessor.HTCSigNetPreprocessor
-canvas_size: [1100, 1700]
+canvas_size: [1700, 2500]
 img_size: [256, 256]
-input_size: [256, 256]
+input_size: [224, 224]

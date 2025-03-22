@@ -122,7 +122,7 @@ def get_dataloaders(config, device):
     move_batch_transforms_to_device(batch_transforms, device)
 
     # dataset load
-    dataset = instantiate(config.dataset_downloaders)
+    dataset = instantiate(config.dataset)
     instance_transforms = instantiate(config.model.instance_transforms)
 
     train_size = int(config.train_test_split * len(dataset))

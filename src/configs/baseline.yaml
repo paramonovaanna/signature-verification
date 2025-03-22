@@ -1,15 +1,13 @@
 defaults:
-   - dataset_downloaders: gpds_synthetic
-   - transforms: main
+   - dataset: gpds_synthetic
+   - transforms: with_preprocess
    - model: convnext-tiny
    - loss: cross_entropy_loss
    - metrics: metrics
    - writer: wandb
    - lr_scheduler: step_lr
-   - preprocessor: no_preprocessor
+   - preprocessor: htcsignet
    - _self_
-
-preprocess: False
 
 dataloaders:
    _target_: torch.utils.data.DataLoader
@@ -17,9 +15,7 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
-train_test_split:
-   split: 0.9
-   shuffle: True
+train_test_split: 0.9
 
 optimizer: 
    _target_: torch.optim.AdamW
