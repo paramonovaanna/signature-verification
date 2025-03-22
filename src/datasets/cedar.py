@@ -9,10 +9,10 @@ from tqdm import tqdm
 from pathlib import Path
 
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
-from src.datasets.base_downloader import BaseDownloader
+from src.datasets.base_dataset import BaseDataset
 
 
-class CEDAR(BaseDownloader):
+class CEDAR(BaseDataset):
 
     def __init__(self, path_download, index_dir, *args, **kwargs):
 

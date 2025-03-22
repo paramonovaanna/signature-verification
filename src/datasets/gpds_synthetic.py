@@ -1,4 +1,4 @@
-from src.datasets.base_downloader import BaseDownloader
+from src.datasets.base_dataset import BaseDataset
 from tqdm import tqdm
 import os
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 
-class GPDSSynthetic(BaseDownloader):
+class GPDSSynthetic(BaseDataset):
 
     def __init__(self, first_user, last_user, path_download, index_dir, *args, **kwargs):
 
