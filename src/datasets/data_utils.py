@@ -49,8 +49,9 @@ def move_batch_transforms_to_device(batch_transforms, device):
             for transform_name in transforms.keys():
                 transforms[transform_name] = transforms[transform_name].to(device)
 
-"""def get_test_dataloaders(config, device):
-    Create dataloaders for testing.
+
+def get_inference_dataloaders(config, device):
+    """Create dataloaders for testing.
     Also creates instance and batch transforms.
 
     Args:
@@ -62,44 +63,45 @@ def move_batch_transforms_to_device(batch_transforms, device):
         batch_transforms (dict[Callable] | None): transforms that
             should be applied on the whole batch. Depend on the
             tensor name.
+    """
 
     # transforms or augmentations init
     batch_transforms = instantiate(config.transforms.batch_transforms)
     move_batch_transforms_to_device(batch_transforms, device)
 
     # dataset init
-    dataset_downloader = instantiate(config.dataset_downloaders)
-    preprocessor = instantiate(config.preprocessor)
-
-    if preprocessor is not None:
-        images, labels = preprocessor(dataset_downloader)
-        data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
-
-
+    dataset = instantiate(config.dataset)
     instance_transforms = instantiate(config.model.instance_transforms)
-    datasets = dataset_downloader.get_test_data(instance_transforms)
+
+    preprocessor = instantiate(config.preprocessor)
+    if config.preprocessor:
+        preprocessor = instantiate(config.preprocessor)
+        images, labels = preprocessor(dataset)
+        data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
+        inference_dataset = PreprocessTD(data, instance_transforms["test"])
+    else:
+        inference_dataset = NoPreprocessTD(dataset, instance_transforms["test"])
 
     # dataloaders init
     dataloaders = {}
-    for dataset_partition in datasets.keys():
-        dataset = datasets[dataset_partition]
 
-        assert config.dataloaders.batch_size <= len(datasets[dataset_partition]), (
-            f"The batch size ({config.dataloaders.batch_size}) cannot "
-            f"be larger than the dataset length ({len(dataset)})"
-        )
+    assert config.dataloaders.batch_size <= len(inference_dataset), (
+        f"The batch size ({config.dataloaders.batch_size}) cannot "
+        f"be larger than the dataset length ({len(dataset)})"
+    )
 
-        partition_dataloader = instantiate(
-            config.dataloaders,
-            dataset=dataset,
-            collate_fn=collate_fn,
-            drop_last=(dataset_partition == "train"),
-            shuffle=(dataset_partition == "train"),
-            worker_init_fn=set_worker_seed,
-        )
-        dataloaders[dataset_partition] = partition_dataloader
+    partition_dataloader = instantiate(
+        config.dataloaders,
+        dataset=inference_dataset,
+        collate_fn=collate_fn,
+        drop_last=False,
+        shuffle=False,
+        worker_init_fn=set_worker_seed,
+    )
 
-    return dataloaders, batch_transforms"""
+    dataloaders["inference"] = partition_dataloader
+
+    return dataloaders, batch_transforms
 
 
 def get_dataloaders(config, device):
