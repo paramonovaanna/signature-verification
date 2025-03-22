@@ -1,1 +1,1 @@
-from src.preprocessor.htcsignet_preprocessor import HTCSigNetPreprocessor
+from src.preprocessor.htcsignet import HTCSigNetPreprocessor
