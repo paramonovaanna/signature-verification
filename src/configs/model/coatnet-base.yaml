@@ -1,0 +1,8 @@
+_model_:
+  _target_: src.models.CoAtNet
+  model_name: "coatnet_2_rw_224.sw_in12k"
+  use_pretrained: True
+
+freeze_layers: null
+
+instance_transforms: ${transforms.instance_transforms}
