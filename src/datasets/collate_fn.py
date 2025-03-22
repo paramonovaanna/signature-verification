@@ -21,4 +21,7 @@ def collate_fn(dataset_items: list[dict]):
     )
     result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
 
+    result_batch["img"] = result_batch["img"].float()
+    result_batch["labels"] = result_batch["labels"].long()
+    
     return result_batch
