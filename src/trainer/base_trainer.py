@@ -277,8 +277,8 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
-                all_logits.append(batch["logits"])
-                all_labels.append(batch["labels"])
+                all_logits.append(batch["logits"].cpu().numpy())
+                all_labels.append(batch["labels"].cpu().numpy())
 
             all_logits = np.concatenate(all_logits)
             all_labels = np.concatenate(all_labels)
