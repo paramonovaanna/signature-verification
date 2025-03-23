@@ -1,17 +1,15 @@
 train: []
 test:
-  - _target_: src.metrics.Accuracy
-    name: "Accuracy"
-  - _target_: src.metrics.EER
-    name: "EER"
-  - _target_: src.metrics.FAR
-    name: "FAR"
-  - _target_: src.metrics.FRR
-    name: "FRR"
+  batch:
+    - _target_: src.metrics.Accuracy
+      name: "Accuracy"
+  epoch:
+    - _target_: src.metrics.EER
+      name: "EER"
 inference:
-  - _target_: src.metrics.Accuracy
-    name: "Accuracy"
-  - _target_: src.metrics.FAR
-    name: "FAR"
-  - _target_: src.metrics.FRR
-    name: "FRR"
+  batch:
+    - _target_: src.metrics.Accuracy
+      name: "Accuracy"
+  epoch:
+    - _target_: src.metrics.EER
+      name: "EER"

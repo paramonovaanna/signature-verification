@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 import torch
+import numpy as np
 from numpy import inf
 from torch.nn.utils import clip_grad_norm_
 from tqdm.auto import tqdm
@@ -123,9 +124,11 @@ class BaseTrainer:
             *[m.name for m in self.metrics["train"]],
             writer=self.writer,
         )
+        metrics_names = [m.name for period in self.metrics["test"].values() for m in period]
         self.evaluation_metrics = MetricTracker(
-            *self.config.writer.loss_names, # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            *[m.name for m in self.metrics["test"]],
+            *self.config.writer.loss_names,
+            "EER_Accuracy",
+            *metrics_names,
             writer=self.writer,
         )
 
@@ -262,7 +265,9 @@ class BaseTrainer:
         self.is_train = False
         self.model.eval()
         self.evaluation_metrics.reset()
+
         with torch.no_grad():
+            all_logits, all_labels = [], []
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
                 desc=part,
@@ -272,6 +277,13 @@ class BaseTrainer:
                     batch,
                     metrics=self.evaluation_metrics,
                 )
+                all_logits.append(batch["logits"])
+                all_labels.append(batch["labels"])
+
+            all_logits = np.concatenate(all_logits)
+            all_labels = np.concatenate(all_labels)
+            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
+    
             self.writer.set_step(epoch * self.epoch_len, part)
             self._log_scalars(self.evaluation_metrics)
             self._log_batch(
@@ -279,6 +291,19 @@ class BaseTrainer:
             )  # log only the last batch during inference
 
         return self.evaluation_metrics.result()
+    
+    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
+        """ In this version: only calculate EER, EER_Accuracy"""
+        metric_funcs = self.metrics["test"]["epoch"]
+
+        for met in metric_funcs:
+            if met.name == "EER":
+                eer, eer_accuracy = met(all_logits, all_labels)
+                metrics.update("EER", eer)
+                metrics.update("EER_Accuracy", eer_accuracy)
+            else:
+                metrics.update(met.name, met(all_logits, all_labels))
+
 
     def _monitor_performance(self, logs, not_improved_count):
         """
