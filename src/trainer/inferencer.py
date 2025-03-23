@@ -1,6 +1,8 @@
 import torch
 from tqdm.auto import tqdm
 
+import numpy as np
+
 from src.metrics.metric_tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -69,8 +71,10 @@ class Inferencer(BaseTrainer):
         # define metrics
         self.metrics = metrics
         if self.metrics is not None:
+            metrics_names = [m.name for period in self.metrics["inference"].values() for m in period]
             self.evaluation_metrics = MetricTracker(
-                *[m.name for m in self.metrics["inference"]],
+                "EER_Accuracy",
+                *metrics_names,
                 writer=None,
             )
         else:
@@ -123,7 +127,7 @@ class Inferencer(BaseTrainer):
         batch.update(outputs)
 
         if metrics is not None:
-            for met in self.metrics["inference"]:
+            for met in self.metrics["inference"]["batch"]:
                 metrics.update(met.name, met(**batch))
 
         # Some saving logic. This is an example
@@ -173,6 +177,7 @@ class Inferencer(BaseTrainer):
             (self.save_path / part).mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
+            all_logits, all_labels = [], []
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
                 desc=part,
@@ -184,5 +189,11 @@ class Inferencer(BaseTrainer):
                     part=part,
                     metrics=self.evaluation_metrics,
                 )
+                all_logits.append(batch["logits"])
+                all_labels.append(batch["labels"])
+
+            all_logits = np.concatenate(all_logits)
+            all_labels = np.concatenate(all_labels)
+            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
 
         return self.evaluation_metrics.result()
