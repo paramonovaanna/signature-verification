@@ -101,6 +101,7 @@ class BaseTrainer:
             "monitor", "off"
         )  # format: "mnt_mode mnt_metric"
 
+        self.optim_threshold = None
         if self.monitor == "off":
             self.mnt_mode = "off"
             self.mnt_best = 0
@@ -128,6 +129,7 @@ class BaseTrainer:
         self.evaluation_metrics = MetricTracker(
             *self.config.writer.loss_names,
             "EER_Accuracy",
+            "Threshold",
             *metrics_names,
             writer=self.writer,
         )
@@ -291,19 +293,6 @@ class BaseTrainer:
             )  # log only the last batch during inference
 
         return self.evaluation_metrics.result()
-    
-    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
-        """ In this version: only calculate EER, EER_Accuracy"""
-        metric_funcs = self.metrics["test"]["epoch"]
-
-        for met in metric_funcs:
-            if met.name == "EER":
-                eer, eer_accuracy = met(all_logits, all_labels)
-                metrics.update("EER", eer)
-                metrics.update("EER_Accuracy", eer_accuracy)
-            else:
-                metrics.update(met.name, met(all_logits, all_labels))
-
 
     def _monitor_performance(self, logs, not_improved_count):
         """
@@ -344,6 +333,7 @@ class BaseTrainer:
 
             if improved:
                 self.mnt_best = logs[self.mnt_metric]
+                self.optim_threshold = logs["test_Threshold"]
                 not_improved_count = 0
                 best = True
             else:
@@ -494,6 +484,7 @@ class BaseTrainer:
             "optimizer": self.optimizer.state_dict(),
             "lr_scheduler": self.lr_scheduler.state_dict(),
             "monitor_best": self.mnt_best,
+            "threshold": self.optim_threshold,
             "config": self.config,
         }
         filename = str(self.checkpoint_dir / f"checkpoint-epoch{epoch}.pth")
@@ -570,7 +561,7 @@ class BaseTrainer:
         else:
             print(f"Loading model weights from: {pretrained_path} ...")
         checkpoint = torch.load(pretrained_path, self.device)
-
+        self.optim_threshold = checkpoint.get("threshold", None)
         if checkpoint.get("state_dict") is not None:
             self.model.load_state_dict(checkpoint["state_dict"])
         else:

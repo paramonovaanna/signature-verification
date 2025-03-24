@@ -69,11 +69,15 @@ class Inferencer(BaseTrainer):
         self.save_path = save_path
 
         # define metrics
+        self.optim_threshold = None
         self.metrics = metrics
         if self.metrics is not None:
             metrics_names = [m.name for period in self.metrics["inference"].values() for m in period]
             self.evaluation_metrics = MetricTracker(
                 "EER_Accuracy",
+                "EER_Optim_Accuracy",
+                "Threshold", 
+                "Optim_Threshold",
                 *metrics_names,
                 writer=None,
             )
@@ -197,3 +201,23 @@ class Inferencer(BaseTrainer):
             self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
 
         return self.evaluation_metrics.result()
+
+    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
+        """ In this version: only calculate EER, EER_Accuracy"""
+        """ We calculate two EER accuracies: using threshold from EER and from the trained model"""
+        metric_funcs = self.metrics["inference"]["epoch"]
+
+        for met in metric_funcs:
+            if met.name == "EER":
+                eer, threshold = met(all_logits, all_labels)
+                
+                eer_accuracy = met.get_eer_accuracy(all_logits, all_labels, threshold)
+                metrics.update("EER", eer)
+                metrics.update("EER_Accuracy", eer_accuracy)
+                metrics.update("Threshold", threshold)
+                if self.optim_threshold is not None:
+                    eer_optim_accuracy = met.get_eer_accuracy(all_logits, all_labels, self.optim_threshold)
+                    metrics.update("EER_Optim_Accuracy", eer_optim_accuracy)
+                    metrics.update("Optim_Threshold", self.optim_threshold)
+            else:
+                metrics.update(met.name, met(all_logits, all_labels))

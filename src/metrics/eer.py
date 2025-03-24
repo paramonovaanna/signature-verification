@@ -20,6 +20,7 @@ class EER(BaseMetric):
         Args:
             logits (Tensor): model output predictions.
             labels (Tensor): ground-truth labels.
+            threshold (float, optinal): used for running inference and calculating accuracy
         Returns:
             EER (float): calculated metric.
         """
@@ -31,10 +32,10 @@ class EER(BaseMetric):
         abs_diffs = np.abs(frr - far)
         min_index = np.argmin(abs_diffs)
         eer = np.mean((frr[min_index], far[min_index]))
-        eer_accuracy = self._get_eer_accuracy(scores, labels, thresholds[min_index])
-        return eer, eer_accuracy
+        return eer, thresholds[min_index]
     
-    def _get_eer_accuracy(self, scores, labels, threshold):
+    def get_eer_accuracy(self, logits, labels, threshold):
+        scores = logits[:, 1]
         predictions = (scores >= threshold).astype(int)
         correct = (predictions == labels).sum()
         total = len(labels)
