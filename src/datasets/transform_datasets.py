@@ -10,7 +10,7 @@ class BaseTransformDataset(Dataset):
     ):
         """
         Args:
-            data (list[dict]): list, containing dict for each element of
+            data (list[dict], Dataset): an indexed object, containing dict for each element of
                 the dataset. The dict has required metadata information,
                 such as label and image_path.
             instance_transforms (dict[Callable] | None): transforms that

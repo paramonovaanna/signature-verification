@@ -76,7 +76,7 @@ def get_inference_dataloaders(config, device):
     preprocessor = instantiate(config.preprocessor)
     if config.preprocessor:
         preprocessor = instantiate(config.preprocessor)
-        images, labels = preprocessor(dataset, test=True)
+        images, labels = preprocessor(dataset, partition="test")
         data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
         inference_dataset = PreprocessTD(data, instance_transforms["test"])
     else:
@@ -125,23 +125,24 @@ def get_dataloaders(config, device):
 
     # dataset load
     dataset = instantiate(config.dataset)
-    instance_transforms = instantiate(config.model.instance_transforms)
+    train_dataset, test_dataset = dataset.split_dataset(config.train_test_split)
 
-    train_size = int(config.train_test_split * len(dataset))
-    sizes = (train_size, len(dataset) - train_size)
+    instance_transforms = instantiate(config.model.instance_transforms)
 
     if config.preprocessor:
         preprocessor = instantiate(config.preprocessor)
-        images, labels = preprocessor(dataset, test=False)
-        data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
 
-        train_set, test_set = random_split(data, sizes)
-        datasets = {"train": PreprocessTD(train_set, instance_transforms["train"]),
-                    "test": PreprocessTD(test_set, instance_transforms["test"])}
+        images, labels = preprocessor(train_dataset, partition="train")
+        train_data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
+
+        images, labels = preprocessor(test_dataset, partition="validation")
+        test_data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
+
+        datasets = {"train": PreprocessTD(train_data, instance_transforms["train"]),
+                    "test": PreprocessTD(test_data, instance_transforms["test"])}
     else:
-        train_set, test_set = random_split(dataset, sizes)
-        datasets = {"train": NoPreprocessTD(train_set, instance_transforms["train"]),
-                    "test": NoPreprocessTD(test_set, instance_transforms["test"])}
+        datasets = {"train": NoPreprocessTD(train_dataset, instance_transforms["train"]),
+                    "test": NoPreprocessTD(test_dataset, instance_transforms["test"])}
 
     # dataloaders init
     dataloaders = {}

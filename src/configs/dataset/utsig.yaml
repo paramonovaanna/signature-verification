@@ -5,5 +5,3 @@ opposite_num: 1
 simple_num: 4
 path_download: null
 index_dir: null
-limit: null
-shuffle_limit: True
