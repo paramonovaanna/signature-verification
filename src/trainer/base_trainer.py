@@ -333,7 +333,7 @@ class BaseTrainer:
 
             if improved:
                 self.mnt_best = logs[self.mnt_metric]
-                self.optim_threshold = logs["Threshold"]
+                self.optim_threshold = logs["test_Threshold"]
                 not_improved_count = 0
                 best = True
             else:
@@ -556,13 +556,12 @@ class BaseTrainer:
             pretrained_path (str): path to the model state dict.
         """
         pretrained_path = str(pretrained_path)
-        self.optim_threshold = checkpoint.get("threshold", None)
         if hasattr(self, "logger"):  # to support both trainer and inferencer
             self.logger.info(f"Loading model weights from: {pretrained_path} ...")
         else:
             print(f"Loading model weights from: {pretrained_path} ...")
         checkpoint = torch.load(pretrained_path, self.device)
-
+        self.optim_threshold = checkpoint.get("threshold", None)
         if checkpoint.get("state_dict") is not None:
             self.model.load_state_dict(checkpoint["state_dict"])
         else:

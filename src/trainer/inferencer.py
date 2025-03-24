@@ -198,7 +198,7 @@ class Inferencer(BaseTrainer):
 
             all_logits = np.concatenate(all_logits)
             all_labels = np.concatenate(all_labels)
-            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics, self.threshold)
+            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
 
         return self.evaluation_metrics.result()
 
