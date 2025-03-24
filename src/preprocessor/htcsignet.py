@@ -18,6 +18,7 @@ class HTCSigNetPreprocessor:
         canvas_size: Tuple[int, int],
         img_size: Tuple[int, int],
         input_size: Tuple[int, int],
+        test=False
     ):
         """
         Initialize the dataset preprocessor.
@@ -35,12 +36,15 @@ class HTCSigNetPreprocessor:
         self.img_size = img_size
         self.input_size = input_size
 
-    def __call__(self, dataset: BaseDataset):
+    def __call__(self, dataset: BaseDataset, test=False):
         # Create preprocess directory if it doesn't exist
         preprocess_dir = ROOT_PATH / "data" / "preprocessed"
         os.makedirs(preprocess_dir, exist_ok=True)
 
-        self.preprocessed_file = preprocess_dir / f"{dataset.__class__.__name__}_{self.canvas_size[0]}_{self.canvas_size[1]}_index.npz"
+        if test:
+            self.preprocessed_file = preprocess_dir / f"{dataset.__class__.__name__}_{self.canvas_size[0]}_{self.canvas_size[1]}_test_index.npz"
+        else:
+            self.preprocessed_file = preprocess_dir / f"{dataset.__class__.__name__}_{self.canvas_size[0]}_{self.canvas_size[1]}_index.npz"
         
         if not os.path.exists(self.preprocessed_file):
             print("Generating preprocessed dataset...")

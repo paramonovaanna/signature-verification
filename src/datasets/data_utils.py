@@ -76,7 +76,7 @@ def get_inference_dataloaders(config, device):
     preprocessor = instantiate(config.preprocessor)
     if config.preprocessor:
         preprocessor = instantiate(config.preprocessor)
-        images, labels = preprocessor(dataset)
+        images, labels = preprocessor(dataset, test=True)
         data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
         inference_dataset = PreprocessTD(data, instance_transforms["test"])
     else:
@@ -132,7 +132,7 @@ def get_dataloaders(config, device):
 
     if config.preprocessor:
         preprocessor = instantiate(config.preprocessor)
-        images, labels = preprocessor(dataset)
+        images, labels = preprocessor(dataset, test=False)
         data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
 
         train_set, test_set = random_split(data, sizes)
