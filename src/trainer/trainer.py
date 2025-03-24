@@ -55,6 +55,20 @@ class Trainer(BaseTrainer):
         for met in metric_funcs:
             metrics.update(met.name, met(**batch))
         return batch
+
+    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
+        """ In this version: only calculate EER, EER_Accuracy"""
+        metric_funcs = self.metrics["test"]["epoch"]
+
+        for met in metric_funcs:
+            if met.name == "EER":
+                eer, threshold = met(all_logits, all_labels)
+                eer_accuracy = met.get_eer_accuracy(all_logits, all_labels, threshold)
+                metrics.update("EER", eer)
+                metrics.update("EER_Accuracy", eer_accuracy)
+                metrics.update("Threshold", threshold)
+            else:
+                metrics.update(met.name, met(all_logits, all_labels))
     
     def _log_batch(self, batch_idx, batch, mode="train"):
         """
