@@ -41,7 +41,10 @@ class HTCSigNetPreprocessor:
         preprocess_dir = ROOT_PATH / "data" / "preprocessed"
         os.makedirs(preprocess_dir, exist_ok=True)
 
-        self.preprocessed_file = preprocess_dir / f"{dataset.__class__.__name__}_{self.canvas_size[0]}_{self.canvas_size[1]}_{partition}_index.npz"
+        if partition == "test":
+            self.preprocessed_file = preprocess_dir / f"GPDSSynthetic_840_1360_test_index.npz"
+        else:
+            self.preprocessed_file = preprocess_dir / f"gpds_0.9_{partition}_index.npz"
         
         if not os.path.exists(self.preprocessed_file):
             print("Generating preprocessed dataset...")
