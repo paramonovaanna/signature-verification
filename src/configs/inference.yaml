@@ -12,6 +12,9 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
+test:
+  users: [1, 300]
+
 inferencer:
   device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"

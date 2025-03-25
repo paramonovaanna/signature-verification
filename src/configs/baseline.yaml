@@ -15,7 +15,9 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
-train_test_split: 0.8
+train_test: 
+   split: 0.8
+   users: [301, 1000]
 
 optimizer: 
    _target_: torch.optim.AdamW

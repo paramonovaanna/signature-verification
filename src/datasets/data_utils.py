@@ -6,7 +6,7 @@ from itertools import repeat
 
 from torch.utils.data import TensorDataset, random_split
 
-from src.datasets.transform_datasets import PreprocessTD, NoPreprocessTD
+from src.datasets import TransformDataset
 
 from src.datasets.collate_fn import collate_fn
 from src.utils.init_utils import set_worker_seed
@@ -69,30 +69,27 @@ def get_inference_dataloaders(config, device):
     batch_transforms = instantiate(config.transforms.batch_transforms)
     move_batch_transforms_to_device(batch_transforms, device)
 
-    # dataset init
     dataset = instantiate(config.dataset)
-    instance_transforms = instantiate(config.model.instance_transforms)
 
     preprocessor = instantiate(config.preprocessor)
-    if config.preprocessor:
-        preprocessor = instantiate(config.preprocessor)
-        images, labels = preprocessor(dataset, partition="test")
-        data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
-        inference_dataset = PreprocessTD(data, instance_transforms["test"])
-    else:
-        inference_dataset = NoPreprocessTD(dataset, instance_transforms["test"])
+    preprocessed_dataset = preprocessor(dataset)
+
+    instance_transforms = instantiate(config.model.instance_transforms)
+    test_data, _ = preprocessed_dataset.random_split(1.0, config.test.users)
+
+    test_dataset = TransformDataset(test_data, instance_transforms)
 
     # dataloaders init
     dataloaders = {}
 
-    assert config.dataloaders.batch_size <= len(inference_dataset), (
+    assert config.dataloaders.batch_size <= len(test_dataset), (
         f"The batch size ({config.dataloaders.batch_size}) cannot "
         f"be larger than the dataset length ({len(dataset)})"
     )
 
     partition_dataloader = instantiate(
         config.dataloaders,
-        dataset=inference_dataset,
+        dataset=test_dataset,
         collate_fn=collate_fn,
         drop_last=False,
         shuffle=False,
@@ -123,26 +120,18 @@ def get_dataloaders(config, device):
     batch_transforms = instantiate(config.transforms.batch_transforms)
     move_batch_transforms_to_device(batch_transforms, device)
 
-    # dataset load
     dataset = instantiate(config.dataset)
-    train_dataset, test_dataset = dataset.split_dataset(config.train_test_split)
+
+    preprocessor = instantiate(config.preprocessor)
+    preprocessed_dataset = preprocessor(dataset)
 
     instance_transforms = instantiate(config.model.instance_transforms)
+    train_data, test_data = preprocessed_dataset.random_split(config.train_test.split, config.train_test.users)
 
-    if config.preprocessor:
-        preprocessor = instantiate(config.preprocessor)
-
-        images, labels = preprocessor(train_dataset, partition="train")
-        train_data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
-
-        images, labels = preprocessor(test_dataset, partition="validation")
-        test_data = TensorDataset(torch.from_numpy(images), torch.from_numpy(labels))
-
-        datasets = {"train": PreprocessTD(train_data, instance_transforms["train"]),
-                    "test": PreprocessTD(test_data, instance_transforms["test"])}
-    else:
-        datasets = {"train": NoPreprocessTD(train_dataset, instance_transforms["train"]),
-                    "test": NoPreprocessTD(test_dataset, instance_transforms["test"])}
+    datasets = {
+        "train": TransformDataset(train_data, instance_transforms),
+        "test": TransformDataset(test_data, instance_transforms)
+    } 
 
     # dataloaders init
     dataloaders = {}

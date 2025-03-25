@@ -1,4 +1,4 @@
 _target_: src.datasets.GPDSSynthetic
-users: [301, 1000]
+signatures_per_user: 54
 path_download: null
 index_dir: null

@@ -9,7 +9,11 @@ import functools
 
 from src.preprocessor.preprocess_utils import preprocess_signature
 
+from src.datasets import PreprocessedDataset
+
 from tqdm import tqdm
+
+import torch
 
 class HTCSigNetPreprocessor:
 
@@ -18,7 +22,6 @@ class HTCSigNetPreprocessor:
         canvas_size: Tuple[int, int],
         img_size: Tuple[int, int],
         input_size: Tuple[int, int],
-        test=False
     ):
         """
         Initialize the dataset preprocessor.
@@ -36,33 +39,45 @@ class HTCSigNetPreprocessor:
         self.img_size = img_size
         self.input_size = input_size
 
-    def __call__(self, dataset: BaseDataset, partition="train"):
+    def __call__(self, dataset: BaseDataset, name):
         # Create preprocess directory if it doesn't exist
-        preprocess_dir = ROOT_PATH / "data" / "preprocessed"
+        preprocess_dir = ROOT_PATH / "data" / name / "preprocessed"
         os.makedirs(preprocess_dir, exist_ok=True)
-
-        if partition == "test":
-            self.preprocessed_file = preprocess_dir / f"GPDSSynthetic_840_1360_test_index.npz"
-        else:
-            self.preprocessed_file = preprocess_dir / f"gpds_0.9_{partition}_index.npz"
         
         if not os.path.exists(self.preprocessed_file):
             print("Generating preprocessed dataset...")
-            images, labels = self.preprocess_dataset(dataset)
+            images, user_indexes, labels, user_mapping = self.preprocess_dataset(dataset)
         else:
-            images, labels = self.load_preprocessed_data()
+            images, user_indexes, labels, user_mapping = self.load_preprocessed_data()
         
-        return images, labels
+        images = torch.from_numpy(images)
+        labels = torch.from_numpy(labels)
+        return PreprocessedDataset(images, labels, user_indexes, user_mapping)
+    
+    def load_preprocessed_dataset(self, path: str):
+        """ Loads a dataset that was pre-processed in a numpy format
 
-    def load_preprocessed_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        Parameters
+        ----------
+        path : str
+            The path to a .npz file, containing attributes "x", "y", "yforg",
+            "usermapping"
+
+        Returns
+        -------
+        x : np.ndarray (N x 1 x H x W) are N grayscale signature images of size H x W
+        y : np.ndarray (N) indicating the user that wrote the signature
+        yforg : np.ndarray (N) indicating wether the signature is a forgery
+        user_mapping: dict, mapping the indexes in "y" with the original user
+                    numbers from the dataset
+        -------
+
         """
-        Load preprocessed data from .npz file.
-        
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Preprocessed images and labels
-        """
-        data = np.load(self.preprocessed_file)
-        return data["images"], data["labels"] 
+        with np.load(path, allow_pickle=True) as data:
+            images, user_indexes, labels = data['images'], data['user_indexes'], data['labels']
+            user_mapping = data['user_mapping']
+
+        return images, user_indexes, labels, user_mapping
 
 
     def preprocess_dataset(self, dataset) -> None:
@@ -75,42 +90,71 @@ class HTCSigNetPreprocessor:
                                       input_size=self.img_size)  # Don't crop it now
 
         processed = self._preprocess_dataset_images(preprocess_fn, dataset)
-        images, labels = processed
+        images, user_indexes, labels, user_mapping = processed
 
         np.savez(self.preprocessed_file,
                 images=images,
-                labels=labels)
+                labels=labels,
+                user_indexes=user_indexes,
+                user_mapping=user_mapping)
         
-        return images, labels
-    
+        return images, user_indexes, labels, user_mapping
 
-    def _preprocess_dataset_images(self, preprocess_fn, dataset) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict, np.ndarray]:
+
+    def _preprocess_dataset_images(self, dataset, preprocess_fn):
         """ Process the signature images from a dataset, returning numpy arrays.
 
         Parameters
         ----------
+        dataset : IterableDataset
+            The dataset, that knows where the signature files are located
         preprocess_fn : function (image) -> image
             A function that takes as input a signature image, preprocess-it and return a new image
+        img_size : tuple (H x W)
+            The final size of the images
+        subset : slice
+            Which users to consider. Either "None" (to consider all users) or a slice(first, last)
 
         Returns
         -------
-        images : np.ndarray (N x 1 x H x W) are N grayscale signature images of size H x W
-        labels : np.ndarray (N) indicating wether the signature is a forgery
+        x : np.ndarray (N x 1 x H x W) are N grayscale signature images of size H x W
+        y : np.ndarray (N) indicating the user that wrote the signature
+        yforg : np.ndarray (N) indicating wether the signature is a forgery
+        usermapping: dict, mapping the indexes in "y" with the original user
+                    numbers from the dataset
+        filenames: np.ndarray(str) (N), the filename associated with the signature image
         """
-        # Pre-allocate an array X to hold all signatures. We do so because
-        # the alternative of concatenating several arrays in the end takes
-        # a lot of memory, which can be problematic when using large image sizes
+
+        user_mapping = {}
+        users = dataset.get_user_list()
+
         H, W = self.img_size
-        signatures = len(dataset)
+        max_signatures = len(users) * dataset.signatures_per_user
 
-        images = np.empty((signatures, H, W), dtype=np.uint8)
-        labels = np.empty(signatures, dtype=np.int32)
+        images = np.empty((max_signatures, H, W), dtype=np.uint8)
+        user_indexes = np.empty(max_signatures, dtype=np.int32)
+        labels = np.empty(max_signatures, dtype=np.int32)
 
-        for i in tqdm(range(signatures)):
-            img, label = dataset.load_img(i, numpy=True)
-            preprocessed_img = preprocess_fn(img)
+        N = 0
+        for i, user in enumerate(tqdm(users)):
+            gen_imgs = [preprocess_fn(img) for img in dataset.iter_genuine(user)]
+            new_img_count = len(gen_imgs)
 
-            images[i] = preprocessed_img
-            labels[i] = label
+            indexes = slice(N, N + new_img_count)
+            images[indexes] = gen_imgs
+            labels[indexes] = 1
+            user_indexes[indexes] = i
+            N += new_img_count
 
-        return images, labels
+            forg_imgs = [preprocess_fn(img) for img in dataset.iter_forgery(user)]
+            if len(forg_imgs) > 0:
+                new_img_count = len(forg_imgs)
+
+                indexes = slice(N, N + new_img_count)
+                images[indexes] = forg_imgs
+                labels[indexes] = 0
+                user_indexes[indexes] = i
+                N += new_img_count
+
+        #images = np.expand_dims(images, 1)
+        return images, user_indexes, labels, user_mapping
