@@ -77,7 +77,7 @@ def get_inference_dataloaders(config, device):
     instance_transforms = instantiate(config.model.instance_transforms)
     test_data, _ = preprocessed_dataset.random_split(1.0, config.test.users)
 
-    test_dataset = TransformDataset(test_data, instance_transforms.test)
+    test_dataset = TransformDataset(test_data, dataset.signatures_per_user, instance_transforms.test)
 
     # dataloaders init
     dataloaders = {}
