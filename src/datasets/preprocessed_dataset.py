@@ -29,6 +29,9 @@ class PreprocessedDataset:
         
         # Convert data to required format
         self.data = self._process_data()
+
+    def limit(self, users_range):
+        self.data = self.data[users_range[0]:users_range[1]]
         
     def _process_data(self):
         """
@@ -74,25 +77,8 @@ class PreprocessedDataset:
         first_group = user_indices[:split_idx]
         second_group = user_indices[split_idx:]
         
-        first_split = []
-        for user_idx in first_group:
-            first_split.extend([
-                {
-                    "img": sig["img"],
-                    "labels": sig["labels"]
-                }
-                for sig in self.data[user_idx]
-            ])
-            
-        second_split = []
-        for user_idx in second_group:
-            second_split.extend([
-                {
-                    "img": sig["img"],
-                    "labels": sig["labels"]
-                }
-                for sig in self.data[user_idx]
-            ])
+        first_split = [self.data[user_idx] for user_idx in first_group]
+        second_split = [self.data[user_idx] for user_idx in second_group]
         
         return first_split, second_split
     
@@ -144,9 +130,9 @@ class PreprocessedDataset:
         return [s for s in signatures if s["labels"] == 0]
     
     def __len__(self) -> int:
-        """Return number of users in the dataset."""
-        return self.num_users
+        """Return number of signatures in the dataset."""
+        return len(self.data)
     
     def __getitem__(self, idx: int) -> List[Dict]:
-        """Get signatures for user by index."""
-        return self.processed_data[idx] 
+        """Get signatures by index."""
+        return self.data[idx]
