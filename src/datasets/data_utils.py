@@ -129,8 +129,8 @@ def get_dataloaders(config, device):
     train_data, test_data = preprocessed_dataset.random_split(config.train_test.split, config.train_test.users)
 
     datasets = {
-        "train": TransformDataset(train_data, instance_transforms.train),
-        "test": TransformDataset(test_data, instance_transforms.test)
+        "train": TransformDataset(train_data, dataset.signatures_per_user, instance_transforms.train),
+        "test": TransformDataset(test_data, dataset.signatures_per_user, instance_transforms.test)
     } 
 
     # dataloaders init

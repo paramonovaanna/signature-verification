@@ -6,11 +6,11 @@ from src.datasets.loading_utils import load_pil
 class TransformDataset(Dataset):
 
     def __init__(
-        self, data, instance_transforms=None
+        self, data, signatures_per_user, instance_transforms=None
     ):
         """
         Args:
-            data (list[dict], Dataset): an indexed object, containing dict for each element of
+            data (list[list[dict]], Dataset): an indexed object, containing dict for each element of
                 the dataset. The dict has required metadata information,
                 such as label and image_path.
             instance_transforms (dict[Callable] | None): transforms that
@@ -18,13 +18,14 @@ class TransformDataset(Dataset):
                 tensor name.
         """
         self.data = data
+        self.signatures_per_user = signatures_per_user
         self.instance_transforms = instance_transforms
 
     def __len__(self):
         """
         Get length of the dataset (length of the index).
         """
-        return len(self.data)
+        return len(self.data) * self.signatures_per_user
 
     def transform_data(self, instance_data):
         """
@@ -62,7 +63,10 @@ class TransformDataset(Dataset):
             instance_data (dict): dict, containing instance
                 (a single dataset element).
         """
-        instance_data = self.data[ind]
-        instance_data = self.transform_data(instance_data)
+        user = ind // self.signatures_per_user
+        no = ind % self.signatures_per_user
 
+        instance_data = self.data[user][no]
+        instance_data["user"] = user
+        instance_data = self.transform_data(instance_data)
         return instance_data
