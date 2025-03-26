@@ -66,7 +66,7 @@ class PreprocessedDataset:
             First list contains signatures from 'split' proportion of users, 
             second list contains signatures from the rest of users.
         """
-        assert 0 < split < 1, ("Split must be between 0 and 1")
+        assert 0 < split <= 1, ("Split must be between 0 and 1")
         user_indices = np.arange(user_range[0] - 1, user_range[1])
         
         # Shuffle user indices
