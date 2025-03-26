@@ -1,9 +1,12 @@
 defaults:
-  - model: convnext-base
-  - dataset: gpds # we do not want to run inference on training data
+  - model: coatnet-base
+  - dataset: gpds_synthetic # we do not want to run inference on training data
   - transforms: with_preprocess
   - preprocessor: htcsignet
+  - classifier: cosine
   - _self_
+
+seed: 42
 
 dataloaders:
    _target_: torch.utils.data.DataLoader
@@ -13,11 +16,3 @@ dataloaders:
 
 test:
   users: [1, 300]
-
-classifier:
-  num_steps: 20
-  reference_samples: [1, 12]
-  device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
-  device: auto # device name or "auto"
-  seed: 42
-  from_pretrained: "saved/base_cosine/model_best.pth" # path to the pretrained model
