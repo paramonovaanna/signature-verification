@@ -39,6 +39,8 @@ class DistanceClassifier:
         self.embeddings = [[] for _ in range(self.num_users)]
         self.labels = [[] for _ in range(self.num_users)]
 
+        self.reference_idx = []
+
         self.num_steps = num_steps
 
     def extract_embeddings(self):
@@ -77,22 +79,19 @@ class DistanceClassifier:
         all_labels = []
         D = []
         
-        for user_id in tqdm(range(len(self.embeddings)), desc="Processing users"):
-            user_embeddings = self.embeddings[user_id]
-            user_labels = self.labels[user_id]
-            genuine_mask = (user_labels == 1)
-            genuine_embeddings = user_embeddings[genuine_mask]
-            
+        for user_id in tqdm(range(self.num_users), desc="Processing users"):
+            genuine_embeddings = self.get_user_signatures(user_id, label=1)
             if len(genuine_embeddings) < m + 1:  # Need m samples + 1 reference
                 continue
                 
-            # Randomly select reference and samples
-            selected_indices = random.sample(range(len(genuine_embeddings)), m + 1)
-            reference = genuine_embeddings[selected_indices[0]]
-            samples = selected_indices[1:]
+            valid_indexes = [i for i in range(len(genuine_embeddings)) if i != self.reference_idx[user_id]]
+            samples = random.sample(valid_indexes, m)
+            reference = genuine_embeddings[self.reference_idx[user_id]]
             
             # Calculate distances for genuine samples
             for i in range(len(genuine_embeddings)):
+                if i == self.reference_idx[user_id]:
+                    continue
                 genuine = genuine_embeddings[i]
                 distance = np.linalg.norm(genuine - reference)
                 all_distances.append(distance)
@@ -101,8 +100,7 @@ class DistanceClassifier:
                     D.append(distance)
             
             # Calculate distances for forged signatures
-            forged_mask = (user_labels == 0)
-            forged_embeddings = user_embeddings[forged_mask]
+            forged_embeddings = self.get_user_signatures(user_id, label=0)
             
             for forged in forged_embeddings:
                 distance = np.linalg.norm(forged - reference)
@@ -139,6 +137,19 @@ class DistanceClassifier:
                 best_threshold = threshold
         
         return best_threshold, best_accuracy
+
+    def fix_references(self):
+        for user_id in range(self.num_users):
+            genuine_sigs = self.get_user_signatures(user_id, label=1)
+            index = random.choice(range(len(genuine_sigs)))
+            self.reference_idx.append(index)
+
+    def get_user_signatures(self, idx, label=1):
+        user_embeddings = self.embeddings[idx]
+        user_labels = self.labels[idx]
+        genuine_mask = (user_labels == label)
+        genuine_embeddings = user_embeddings[genuine_mask]
+        return genuine_embeddings
     
     def classify(self, m) -> Dict[str, Any]:
         """

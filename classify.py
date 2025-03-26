@@ -38,6 +38,7 @@ def main(config):
         num_steps=config.classifier.num_steps,
     )
     classifier.extract_embeddings()
+    classifier.fix_references()
 
     m_values = range(config.classifier.reference_samples[0], config.classifier.reference_samples[1])
     for m in m_values:
