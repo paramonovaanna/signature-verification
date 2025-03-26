@@ -1,0 +1,23 @@
+defaults:
+  - model: convnext-base
+  - dataset: gpds # we do not want to run inference on training data
+  - transforms: with_preprocess
+  - preprocessor: htcsignet
+  - _self_
+
+dataloaders:
+   _target_: torch.utils.data.DataLoader
+   batch_size: 32
+   num_workers: 2
+   pin_memory: True
+
+test:
+  users: [1, 300]
+
+classifier:
+  num_steps: 20
+  reference_samples: [1, 12]
+  device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
+  seed: 42
+  from_pretrained: "saved/base_cosine/model_best.pth" # path to the pretrained model
