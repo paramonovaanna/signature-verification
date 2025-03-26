@@ -1,0 +1,1 @@
+from embeddings.embeddings_extractor import EmbeddingsExtractor
