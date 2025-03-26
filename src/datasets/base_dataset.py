@@ -15,16 +15,12 @@ class BaseDataset(Dataset):
     def __len__(self):
         return len(self._index)
     
-    def load_img(self, ind, numpy=False):
-        data_dict = self._index[ind]
-        label = data_dict["label"]
-
-        img_path = data_dict["path"]
+    def load_img(self, img_path, numpy=True):
         if numpy:
             img = load_numpy(img_path)
         else: 
             img = load_pil(img_path)
-        return img, label
+        return img
     
     from typing import List, Dict, Generator, Any
 
@@ -32,24 +28,24 @@ class BaseDataset(Dataset):
         """
         Generator function to iterate over genuine signatures for a specific user.
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (indexes from 0)
             
         Yields:
             Dictionary containing genuine signature with keys 'img' and 'label'
         """
         for item in self._index[user_id]:
-            if item["label"] == 1:
-                yield item
+            if item.get("label") == 1:
+                yield self.load_img(item.get("path"))
 
     def iter_forged(self, user_id):
         """
         Generator function to iterate over genuine signatures for a specific user.
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (indexes from 0)
             
         Yields:
             Dictionary containing genuine signature with keys 'img' and 'label'
         """
         for item in self._index[user_id]:
-            if item["label"] == 0:
-                yield item
+            if item.get("label") == 0:
+                yield self.load_img(item.get("path"))

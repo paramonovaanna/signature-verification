@@ -77,7 +77,7 @@ def get_inference_dataloaders(config, device):
     instance_transforms = instantiate(config.model.instance_transforms)
     test_data, _ = preprocessed_dataset.random_split(1.0, config.test.users)
 
-    test_dataset = TransformDataset(test_data, instance_transforms)
+    test_dataset = TransformDataset(test_data, instance_transforms.test)
 
     # dataloaders init
     dataloaders = {}
@@ -129,8 +129,8 @@ def get_dataloaders(config, device):
     train_data, test_data = preprocessed_dataset.random_split(config.train_test.split, config.train_test.users)
 
     datasets = {
-        "train": TransformDataset(train_data, instance_transforms),
-        "test": TransformDataset(test_data, instance_transforms)
+        "train": TransformDataset(train_data, instance_transforms.train),
+        "test": TransformDataset(test_data, instance_transforms.test)
     } 
 
     # dataloaders init

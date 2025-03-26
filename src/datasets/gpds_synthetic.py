@@ -11,6 +11,8 @@ class GPDSSynthetic(BaseDataset):
     def __init__(self, signatures_per_user, path_download, index_dir, *args, **kwargs):
 
         self.signatures_per_user = signatures_per_user
+
+        self.name = "gpds"
         
         if path_download is None:
             path_download = ROOT_PATH / "data"
@@ -27,7 +29,6 @@ class GPDSSynthetic(BaseDataset):
             self._index = read_json(str(index_path))
         else:
             self._index = self._generate_index(index_dir, str(index_path))
-
         super().__init__(self._index, *args, **kwargs)
 
     def _generate_index(self, index_dir, index_path):
@@ -36,11 +37,12 @@ class GPDSSynthetic(BaseDataset):
         and forged_num labeled as 0
         '''
 
-        index = []
         index_dir.mkdir(exist_ok=True, parents=True)
 
         subdirs = os.listdir(self.dataset_path)
         subdirs = sorted(subdirs, key=lambda x: int(os.path.basename(x)))
+        index = [[] for i in range(len(subdirs))]
+
         print("Parsing signatures into index...")
         for i in tqdm(range(len(subdirs))):
             person_path = self.dataset_path / subdirs[i]
@@ -54,13 +56,13 @@ class GPDSSynthetic(BaseDataset):
                     continue
 
                 if name.startswith("c-"):
-                    index.append({
+                    index[i].append({
                         'path': str(person_path / filename),
                         'label': 1
                     })
 
                 if name.startswith("cf-"):
-                    index.append({
+                    index[i].append({
                         'path': str(person_path / filename),
                         'label': 0
                     })
@@ -68,3 +70,6 @@ class GPDSSynthetic(BaseDataset):
         write_json(index, index_path)
         return index
 
+    def get_user_list(self):
+        users = [int(os.path.basename(x)) - 1 for x  in os.listdir(self.dataset_path)]
+        return sorted(users)
