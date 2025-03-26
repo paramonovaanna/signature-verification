@@ -21,6 +21,8 @@ class DistanceClassifier:
         Args:
             dataset: PreprocessedDataset instance containing signature data
         """
+        self.config = config
+
         self.dataloader = dataloader
         self.batch_transforms = batch_transforms
 
@@ -30,7 +32,7 @@ class DistanceClassifier:
         
         # Load model
         self.model = model
-        self._from_pretrained(config.classifier.pretrained_path)
+        self._from_pretrained(config.from_pretrained)
         self.model.eval()
         
         # Initialize storage for embeddings
@@ -42,24 +44,27 @@ class DistanceClassifier:
     def extract_embeddings(self):
         print("Extracting embeddings...")
 
-        for batch_idx, batch in tqdm(enumerate(self.dataloader)):
+        for batch_idx, batch in enumerate(
+            tqdm(self.dataloader, total=len(self.dataloader))
+        ):
             with torch.no_grad():
                 batch = self.move_batch_to_device(batch)
                 batch = self.transform_batch(batch)
 
                 embeddings = self.model.features(**batch)
-                embeddings["emb"] = embeddings["emb"].mean(dim=[2, 3]) 
+                embeddings["emb"] = embeddings["emb"].mean(dim=[2, 3]) # 32 * 1024
                 batch.update(embeddings)
 
                 for i in range(len(batch["labels"])):
                     user_idx = batch["user"][i]
                     emb = batch["emb"][i].cpu().numpy()
-                    label = batch["labels"][i].item()
+                    label = np.array([batch["labels"][i].item()])
                     self.embeddings[user_idx].append(emb)
                     self.labels[user_idx].append(label)
 
-        for user_idx in len(self.num_users):
-            self.embeddings[user_idx] = np.concatenate(self.embeddings[user_idx])
+        for user_idx in range(self.num_users):
+            self.embeddings[user_idx] = np.array(self.embeddings[user_idx])
+            self.labels[user_idx] = np.concatenate(self.labels[user_idx])
     
     def calculate_distances(self, m):
         """
@@ -72,10 +77,9 @@ class DistanceClassifier:
         all_labels = []
         D = []
         
-        for user_id in tqdm(len(self.embeddings_data), desc="Processing users"):
-            user_embeddings = self.embeddings[user_id]["emb"]
+        for user_id in tqdm(range(len(self.embeddings)), desc="Processing users"):
+            user_embeddings = self.embeddings[user_id]
             user_labels = self.labels[user_id]
-            
             genuine_mask = (user_labels == 1)
             genuine_embeddings = user_embeddings[genuine_mask]
             
@@ -97,7 +101,7 @@ class DistanceClassifier:
                     D.append(distance)
             
             # Calculate distances for forged signatures
-            forged_mask = not genuine_mask
+            forged_mask = (user_labels == 0)
             forged_embeddings = user_embeddings[forged_mask]
             
             for forged in forged_embeddings:
@@ -165,7 +169,7 @@ class DistanceClassifier:
             batch (dict): dict-based batch containing the data from
                 the dataloader with some of the tensors on the device.
         """
-        for tensor_for_device in self.cfg_trainer.device_tensors:
+        for tensor_for_device in self.config.device_tensors:
             batch[tensor_for_device] = batch[tensor_for_device].to(self.device)
         return batch
 
@@ -185,7 +189,7 @@ class DistanceClassifier:
                 the dataloader (possibly transformed via batch transform).
         """
         # do batch transforms on device
-        transform_type = "train" if self.is_train else "inference"
+        transform_type = "inference"
         transforms = self.batch_transforms.get(transform_type)
         if transforms is not None:
             for transform_name in transforms.keys():

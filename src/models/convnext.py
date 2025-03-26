@@ -44,6 +44,9 @@ class ConvNeXt(nn.Module):
             output (dict): output dict containing logits.
         """
         return {"logits": self.model(img)}
+
+    def features(self, img, **batch):
+        return {"emb": self.model.forward_features(img)}
     
     def freeze_layers(self, num_layers=None):
         # замораживать слои, кроме классификатора

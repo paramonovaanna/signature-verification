@@ -26,12 +26,15 @@ def main(config):
     model = instantiate(config.model._model_).to(device)
     print(model)
 
+    num_users = config.test.users[1] - config.test.users[0] + 1
+
     classifier = DistanceClassifier(
         model=model,
-        config=config,
+        config=config.classifier,
         device=device,
         dataloader=dataloaders["inference"],
         batch_transforms=batch_transforms,
+        num_users=num_users,
         num_steps=config.classifier.num_steps,
     )
     classifier.extract_embeddings()

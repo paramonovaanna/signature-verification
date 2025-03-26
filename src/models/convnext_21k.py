@@ -46,6 +46,9 @@ class ConvNeXt_21k(nn.Module):
         """
         return {"logits": self.model(img)}
 
+    def features(self, img, **batch):
+        return {"emb": self.model.forward_features(img)}
+
     def freeze_layers(self, num_layers=None):
         # замораживаем все, кроме классификатора
 
