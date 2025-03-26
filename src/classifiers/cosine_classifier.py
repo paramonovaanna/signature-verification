@@ -5,7 +5,7 @@ import torch
 
 import random
 
-from srs.classifiers.distance_classifier import DistanceClassifier
+from src.classifiers.distance_classifier import DistanceClassifier
 
 
 class CosineClassifier(DistanceClassifier):
@@ -54,7 +54,7 @@ class CosineClassifier(DistanceClassifier):
                 distance = np.linalg.norm(forged - reference)
                 all_distances.append(distance)
                 all_labels.append(0)
-        
+        print(min(all_distances), max(all_distances))
         return np.array(all_distances), np.array(all_labels)
     
     def calculate_accuracy(self, distances: np.ndarray, labels: np.ndarray) -> Tuple[float, float]:
@@ -83,14 +83,14 @@ class CosineClassifier(DistanceClassifier):
         logs = []
         for m in self.m_values:
             # Calculate distances
-            distances, labels, D = self.calculate_distances(m)
+            distances, labels = self.calculate_distances(m)
             
             # Find optimal threshold
-            threshold, accuracy = self.calculate_accuracy(distances, labels)
+            accuracy = self.calculate_accuracy(distances, labels)
             
             logs.append({
                 'm': m,
-                'threshold': threshold,
+                'threshold': self.threshold,
                 'accuracy': accuracy,
             })
         return logs

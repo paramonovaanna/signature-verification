@@ -5,10 +5,10 @@ import torch
 
 import random
 
-from srs.classifiers.distance_classifier import DistanceClassifier
+from src.classifiers.distance_classifier import DistanceClassifier
 
 
-class EucledianClassifier(DistanceClassifier):
+class EuclideanClassifier(DistanceClassifier):
     def __init__(self, num_steps, *args, **kwargs):
         """
         Initialize DistanceClassifier.

@@ -8,10 +8,12 @@ import random
 
 class DistanceClassifier:
     def __init__(self, 
+                m_values,
+                num_users,
                 device,
                 device_tensors,
                 model, 
-                num_users,
+                from_pretrained,
                 dataloader,
                 batch_transforms, *args, **kwargs):
         """
@@ -24,20 +26,19 @@ class DistanceClassifier:
         self.batch_transforms = batch_transforms
 
         self.num_users = num_users
+        self.m_values = np.arange(m_values[0], m_values[1])
 
         self.device = device
         self.device_tensors = device_tensors
         
         # Load model
         self.model = model
-        self._from_pretrained(config.from_pretrained)
+        self._from_pretrained(from_pretrained)
         self.model.eval()
         
         # Initialize storage for embeddings
         self.embeddings = [[] for _ in range(self.num_users)]
         self.labels = [[] for _ in range(self.num_users)]
-
-        self.num_steps = num_steps
 
     def extract_embeddings(self):
         print("Extracting embeddings...")
