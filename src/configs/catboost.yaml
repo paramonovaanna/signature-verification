@@ -1,0 +1,13 @@
+defaults:
+  - /model@model1: coatnet-large
+  - /model@model2: convnext-21k   
+
+embeddings:
+  pretrained_paths: []
+  save_dir:
+  filename:
+
+device:
+  device: "auto"
+  device_tensors: ["img", "labels"]
+  
