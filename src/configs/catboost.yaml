@@ -16,7 +16,7 @@ dataloaders:
 embeddings:
   pretrained_paths: ["saved/coatnetL-0.9split/model_best.pth"]
   save_dir: null
-  filename: "coatnetL-0.9split_emb.npz"
+  filename: "coatnetL-0.9split_emb150-850.npz"
 
 train_test:
   users: [301, 1000]
@@ -30,4 +30,15 @@ device:
   device_tensors: ["img", "labels"]
 
 seed: 42
+
+catboost:
+  _target_: catboost.CatBoostClassifier
+  task_type: "CPU"
+  iterations: 1000
+  learning_rate: 1e-4
+  depth: 8
+  use_best_model: True
+  eval_metric: "Accuracy"
+  early_stopping_rounds: 50
+  random_seed: 42
   

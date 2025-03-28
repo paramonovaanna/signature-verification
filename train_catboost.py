@@ -68,10 +68,10 @@ def main(config):
     test_acc = np.mean(test_pred == labels["inference"])
     print(f"Inference accuracy: {test_acc:.4f}")
     
-    save_dir = ROOT_PATH / "checkpoints" / "catboost"
+    """save_dir = ROOT_PATH / "checkpoints" / "catboost"
     os.makedirs(save_dir, exist_ok=True)
     classifier.model.save_model(os.path.join(save_dir, "coatnetL-0.9split_classifier.cbm"))
-    print(f"Model saved to {save_dir}/coatnetL-0.9split_classifier.cbm")
+    print(f"Model saved to {save_dir}/coatnetL-0.9split_classifier.cbm")"""
 
 
 if __name__ == "__main__":
