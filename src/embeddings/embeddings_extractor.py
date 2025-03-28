@@ -81,8 +81,10 @@ class EmbeddingsExtractor:
                 batch = self.move_batch_to_device(batch)
 
                 outputs = self.model1.features(**batch)["emb"]
+                outputs = outputs.mean(axis=(2, 3))
                 if self.model2 is not None:
                     outputs2 = self.model2.features(**batch)["emb"]
+                    outputs2 = outputs2.mean(axis=(2, 3))
                     outputs = 0.5 * (outputs + outputs2)
 
                 embeddings.append(outputs.cpu().numpy())
