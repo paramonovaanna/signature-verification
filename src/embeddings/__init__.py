@@ -1,1 +1,1 @@
-from embeddings.embeddings_extractor import EmbeddingsExtractor
+from src.embeddings.embeddings_extractor import EmbeddingsExtractor

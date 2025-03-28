@@ -1,13 +1,33 @@
 defaults:
-  - /model@model1: coatnet-large
-  - /model@model2: convnext-21k   
+  - dataset: gpds_synthetic
+  - transforms: with_preprocess
+  - model: coatnet-large
+  - loss: cross_entropy_loss
+  - metrics: metrics
+  - preprocessor: htcsignet 
+  - _self_
+
+dataloaders:
+   _target_: torch.utils.data.DataLoader
+   batch_size: 32
+   num_workers: 2
+   pin_memory: True
 
 embeddings:
-  pretrained_paths: []
-  save_dir:
-  filename:
+  pretrained_paths: ["saved/coatnetL-0.9split/model_best.pth"]
+  save_dir: null
+  filename: "coatnetL-0.9split_emb.npz"
+
+train_test:
+  users: [301, 1000]
+  split: 0.9
+
+test:
+  users: [1, 300]
 
 device:
   device: "auto"
   device_tensors: ["img", "labels"]
+
+seed: 42
   

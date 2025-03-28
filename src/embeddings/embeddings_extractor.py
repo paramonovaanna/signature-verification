@@ -8,16 +8,16 @@ from src.utils.io_utils import ROOT_PATH
 
 class EmbeddingsExtractor:
 
-    def __init__(self, models, pretrained_paths, device, device_tensors=["img, labels"]):   
+    def __init__(self, models, pretrained_paths, device, device_tensors=["img, labels"]):  
+        self.device = device
+        self.device_tensors = device_tensors
+
         self.model1 = self._init_model(models[0], pretrained_paths[0])
         self.model2 = None
         if models[1] is not None:
             self.model2 = self._init_model(models[1], pretrained_paths[1])
 
-        self.device = device
-        self.device_tensors = device_tensors
-
-    def extract(self, save_dir, filename, dataloaders=None):
+    def extract(self, save_dir=None, filename=None, dataloaders=None):
         filepath = self._get_path(save_dir, filename)
 
         if not os.path.exists(filepath):
@@ -34,24 +34,24 @@ class EmbeddingsExtractor:
     def load(self, filepath):
         emb, labels = {}, {}
         with np.load(filepath, allow_pickle=True) as data:
-            for partition in ["train", "val", "test"]:
+            for partition in ["train", "test", "inference"]:
                 emb[partition] = data[f"{partition}_embeddings"]
                 labels[partition] = data[f"{partition}_labels"]
         return emb, labels
 
     def extract_and_save(self, filepath, dataloaders):
         emb, labels = {}, {}
-        for partition in ["train", "val", "test"]:
+        for partition in ["train", "test", "inference"]:
             emb[partition], labels[partition] = self.extract_embeddings(dataloaders[partition])
 
         np.savez(
             filepath,
             train_embeddings=emb["train"],
-            val_embeddings=emb["val"],
             test_embeddings=emb["test"],
+            inference_embeddings=emb["inference"],
             train_labels=labels["train"],
-            val_labels=labels["val"],
-            test_labels=labels["test"]
+            test_labels=labels["test"],
+            inference_labels=labels["inference"]
         )
         return emb, labels
 
@@ -107,6 +107,7 @@ class EmbeddingsExtractor:
         """
         if pretrained_path is None:
             return model
+
         pretrained_path = str(pretrained_path)
         print(f"Loading model weights from: {pretrained_path} ...")
         checkpoint = torch.load(pretrained_path, self.device)
@@ -116,11 +117,12 @@ class EmbeddingsExtractor:
             model.load_state_dict(checkpoint)
         return model
     
-    def _get_path(self, save_dir, filename):
-        path = ROOT_PATH / "data" / "embeddings" / save_dir
-        os.makedirs(path, exist_ok=True)
-        if not self.filename:
-            filename = f"{self.models[0].name}_{self.models[1].name if self.models[1] is not None else ""}.npz"
+    def _get_path(self, save_dir=None, filename=None):
+        if save_dir is None:
+            save_dir = ROOT_PATH / "data" / "embeddings"
+        os.makedirs(save_dir, exist_ok=True)
+        if filename is None:
+            filename = f"{self.models[0].name}_{self.models[1].name if self.models[1] is not None else ''}.npz"
         filepath = os.path.join(save_dir, filename)
         return filepath
     
