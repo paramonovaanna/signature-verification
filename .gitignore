@@ -9,3 +9,5 @@ saved/
 wandb/
 
 *.pyc
+
+catboost_info/
