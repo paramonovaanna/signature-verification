@@ -14,11 +14,22 @@ class CoAtNet(nn.Module):
     head
     """
 
-    def __init__(self, model_name, use_pretrained=True):
+    def __init__(self, model_name, use_pretrained=True, grayscale=True, freeze_no=None):
         super().__init__()
         self.model = timm.create_model(model_name, pretrained=use_pretrained)
+        self.use_pretrained = use_pretrained
+        if grayscale:
+            self._accept_grayscale()
 
-        if use_pretrained:
+        # Change classifier to classify into genuine and forged
+        n_features = self.model.head.fc.in_features
+        self.model.head.fc = nn.Linear(in_features=n_features, out_features=2, bias=True)
+
+        if freeze_no is not None:
+            self.freeze_layers(freeze_no)
+
+    def _accept_grayscale(self):
+        if self.use_pretrained:
             first_conv_weights = self.model.stem.conv1.weight.data
             grayscale_weights = first_conv_weights.mean(dim=1, keepdim=True)
 
@@ -30,12 +41,8 @@ class CoAtNet(nn.Module):
                                         stride=first_conv.stride,
                                         padding=first_conv.padding)
         
-        if use_pretrained:
+        if self.use_pretrained:
             self.model.stem.conv1.weight.data = grayscale_weights
-
-        # Change classifier to classify into genuine and forged
-        n_features = self.model.head.fc.in_features
-        self.model.head.fc = nn.Linear(in_features=n_features, out_features=2, bias=True)
 
     def forward(self, img, **batch):
         """
@@ -52,11 +59,6 @@ class CoAtNet(nn.Module):
         return {"emb": self.model.forward_features(img)}
 
     def freeze_layers(self, num_layers=None):
-        # замораживаем все, кроме классификатора
-
-        if num_layers is None:
-            return
-
         assert num_layers < len(self.model.stages) + 1
 
         for param in self.model.stem.parameters():

@@ -2,7 +2,7 @@ _model_:
   _target_: src.models.ConvNeXt_21k
   model_name: "convnext_tiny.fb_in22k"
   use_pretrained: True
-
-freeze_layers: null
+  grayscale: True
+  freeze_no: null
 
 instance_transforms: ${transforms.instance_transforms}

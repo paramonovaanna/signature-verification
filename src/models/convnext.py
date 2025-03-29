@@ -11,11 +11,21 @@ class ConvNeXt(nn.Module):
     N_LAYERS = 8
     """
 
-    def __init__(self, base_model, weights=None):
+    def __init__(self, model, grayscale=True, freeze_no=None):
         super().__init__()
-        self.model = base_model
-        
-        if weights is not None:
+        self.model = model
+
+        if grayscale:
+            self._accept_grayscale()
+
+        n_features = self.model.classifier[2].in_features
+        self.model.classifier[2] = nn.Linear(n_features, 2)
+
+        if freeze_no is not None:
+            self.freeze_layers(freeze_no)
+
+    def _accept_grayscale(self):
+        if self.use_pretrained:
             first_conv_weights = self.model.features[0][0].weight.data
             grayscale_weights = first_conv_weights.mean(dim=1, keepdim=True)
         
@@ -28,11 +38,8 @@ class ConvNeXt(nn.Module):
                                              stride=first_conv.stride,
                                              padding=first_conv.padding)
         
-        if weights is not None:
+        if self.use_pretrained:
             self.model.features[0][0].weight.data = grayscale_weights
-
-        n_features = self.model.classifier[2].in_features
-        self.model.classifier[2] = nn.Linear(n_features, 2)
 
     def forward(self, img, **batch):
         """
@@ -49,34 +56,28 @@ class ConvNeXt(nn.Module):
         return {"emb": self.model.forward_features(img)}
     
     def freeze_layers(self, num_layers=None):
-        # замораживать слои, кроме классификатора
-        if num_layers is None:
-            return
         assert (num_layers - 1) < len(self.model.features)
 
         for param in self.model.features[:num_layers].parameters():
             param.requires_grad = False
 
 class ConvNeXt_T(ConvNeXt):
-    def __init__(self, use_pretrained=True):
-        weights = None
-        if use_pretrained:
-            weights = ConvNeXt_Tiny_Weights.IMAGENET1K_V1
-        model = convnext_tiny(weights=weights)  # Load with weights first
-        super().__init__(model, weights=weights if use_pretrained else None)
+    def __init__(self, use_pretrained=True, *args, **kwargs):
+        self.use_pretrained = use_pretrained
+        weights = ConvNeXt_Tiny_Weights.IMAGENET1K_V1 if use_pretrained else None
+        model = convnext_tiny(weights=weights)
+        super().__init__(model=model, *args, **kwargs)
 
 class ConvNeXt_S(ConvNeXt):
-    def __init__(self, use_pretrained=True):
-        weights = None
-        if use_pretrained:
-            weights = ConvNeXt_Small_Weights.IMAGENET1K_V1
-        model = convnext_small(weights=weights)  # Load with weights first
-        super().__init__(model, weights=weights if use_pretrained else None)
+    def __init__(self, use_pretrained=True, *args, **kwargs):
+        self.use_pretrained = use_pretrained
+        weights = ConvNeXt_Small_Weights.IMAGENET1K_V1 if use_pretrained else None
+        model = convnext_tiny(weights=weights)
+        super().__init__(model=model, *args, **kwargs)
 
 class ConvNeXt_B(ConvNeXt):
-    def __init__(self, use_pretrained=True):
-        weights = None
-        if use_pretrained:
-            weights = ConvNeXt_Base_Weights.IMAGENET1K_V1
-        model = convnext_base(weights=weights)  # Load with weights first
-        super().__init__(model, weights=weights if use_pretrained else None)
+    def __init__(self, use_pretrained=True, *args, **kwargs):
+        self.use_pretrained = use_pretrained
+        weights = ConvNeXt_Base_Weights.IMAGENET1K_V1 if use_pretrained else None
+        model = convnext_tiny(weights=weights)
+        super().__init__(model=model, *args, **kwargs)
