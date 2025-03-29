@@ -6,6 +6,9 @@ train:
       - _target_: torchvision.transforms.RandomCrop
         size: [224, 224]
       - _target_: torchvision.transforms.ToTensor
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.0164]
+        std: [0.0950]
   
 test:
   img:
@@ -15,4 +18,7 @@ test:
       - _target_: torchvision.transforms.CenterCrop
         size: [224, 224]
       - _target_: torchvision.transforms.ToTensor
+      - _target_: torchvision.transforms.Normalize
+        mean: [0.0164]
+        std: [0.0950]
   

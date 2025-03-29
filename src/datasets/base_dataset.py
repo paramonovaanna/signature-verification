@@ -21,8 +21,6 @@ class BaseDataset(Dataset):
         else: 
             img = load_pil(img_path)
         return img
-    
-    from typing import List, Dict, Generator, Any
 
     def iter_genuine(self, user_id):
         """
