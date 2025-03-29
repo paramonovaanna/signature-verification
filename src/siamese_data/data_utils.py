@@ -39,7 +39,7 @@ def get_inference_dataloaders(config, device):
     preprocessed_dataset = preprocessor(dataset)
 
     instance_transforms = instantiate(config.model.instance_transforms)
-    test_data, _ = preprocessed_dataset.random_split(1.0, config.train_test.users)
+    test_data, _ = preprocessed_dataset.random_split(1.0, config.test.users)
 
     dataset = SiameseTestDataset(test_data, instance_transforms.test)
 

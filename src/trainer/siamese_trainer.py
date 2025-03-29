@@ -98,8 +98,8 @@ class SiameseTrainer(BaseTrainer):
                 batch.update(outputs)
 
                 similarities = self.similarity_fn(outputs["r_emb"], outputs["s_emb"])
-                forged_prob = similarities.unsqueeze(1)
-                genuine_prob = 1 - forged_prob
+                genuine_prob = (similarities.unsqueeze(1) + 1) / 2
+                forged_prob = 1 - genuine_prob
                 probs = torch.cat([forged_prob, genuine_prob], dim=1).cpu().numpy()
 
                 all_probs.append(probs)
