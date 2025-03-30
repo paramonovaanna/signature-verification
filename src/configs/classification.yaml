@@ -1,0 +1,18 @@
+defaults:
+  - model: coatnet-base
+  - dataset: gpds_synthetic # we do not want to run inference on training data
+  - transforms: with_preprocess
+  - preprocessor: htcsignet
+  - classifier: cosine
+  - _self_
+
+seed: 42
+
+dataloaders:
+   _target_: torch.utils.data.DataLoader
+   batch_size: 32
+   num_workers: 2
+   pin_memory: True
+
+test:
+  users: [1, 300]
