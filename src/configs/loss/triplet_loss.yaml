@@ -1,0 +1,2 @@
+_target_: src.loss.TripletLoss
+margin: 1.0
