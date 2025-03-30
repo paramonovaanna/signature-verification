@@ -44,7 +44,7 @@ class HTCSigNetPreprocessor:
         preprocess_dir = ROOT_PATH / "data" / "preprocessed"
         os.makedirs(preprocess_dir, exist_ok=True)
         
-        self.preprocessed_file = preprocess_dir / f"{dataset.name}_index.npz"
+        self.preprocessed_file = preprocess_dir / f"{dataset.name}_1000_index.npz"
 
         if not os.path.exists(self.preprocessed_file):
             print("Generating preprocessed dataset...")

@@ -72,4 +72,4 @@ class GPDSSynthetic(BaseDataset):
 
     def get_user_list(self):
         users = [int(os.path.basename(x)) - 1 for x  in os.listdir(self.dataset_path)]
-        return sorted(users)
+        return sorted(users)[:1000]

@@ -8,9 +8,10 @@ from src.utils.io_utils import ROOT_PATH
 
 class EmbeddingsExtractor:
 
-    def __init__(self, models, pretrained_paths, device, device_tensors=["img, labels"]):  
+    def __init__(self, models, pretrained_paths, device, device_tensors=["img, labels"], siamese=False):  
         self.device = device
         self.device_tensors = device_tensors
+        self.siamese = siamese
 
         self.model1 = self._init_model(models[0], pretrained_paths[0])
         self.model2 = None
@@ -41,8 +42,11 @@ class EmbeddingsExtractor:
 
     def extract_and_save(self, filepath, dataloaders):
         emb, labels = {}, {}
-        for partition in ["train", "test", "inference"]:
-            emb[partition], labels[partition] = self.extract_embeddings(dataloaders[partition])
+        for partition in ["inference", "train", "test"]:
+            if self.siamese:
+                emb[partition], labels[partition] = self.extract_embeddings_siamese(dataloaders[partition])
+            else:
+                emb[partition], labels[partition] = self.extract_embeddings(dataloaders[partition])
 
         np.savez(
             filepath,
@@ -93,6 +97,31 @@ class EmbeddingsExtractor:
 
             embeddings = np.vstack(embeddings)
             labels = np.concatenate(labels)
+       
+        return embeddings, labels
+
+    def extract_embeddings_siamese(self, dataloader):
+        self.model1.eval()
+        if self.model2 is not None:
+            self.model2.eval()
+        embeddings = []
+        labels = []
+
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc=f"Extracting embeddings..."):
+                batch = self.move_batch_to_device(batch)
+
+                outputs = self.model1.test_forward(**batch)
+                emb1 = outputs["r_emb"].cpu().numpy()
+                emb2 = outputs["s_emb"].cpu().numpy()
+                euclidean_dist = np.linalg.norm(emb1 - emb2, axis=1)
+                outputs = euclidean_dist
+
+                embeddings.append(outputs)
+                labels.append(batch['labels'].cpu().numpy())
+
+            embeddings = np.concatenate(embeddings).reshape(-1, 1)
+            labels = np.concatenate(labels).reshape(-1, 1)
        
         return embeddings, labels
 

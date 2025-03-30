@@ -1,7 +1,7 @@
 defaults:
-  - model: convnext-tiny
+  - model: coatnet-base
   - metrics: metrics
-  - dataset: utsig # we do not want to run inference on training data
+  - dataset: gpds_synthetic # we do not want to run inference on training data
   - transforms: with_preprocess
   - preprocessor: htcsignet
   - _self_
@@ -20,4 +20,4 @@ inferencer:
   device: auto # device name or "auto"
   save_path: "utsig" # any name here, can be a dataset name
   seed: 42
-  from_pretrained: "saved/base_cosine/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/coatnetB-0.9split/model_best.pth" # path to the pretrained model
