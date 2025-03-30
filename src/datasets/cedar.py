@@ -3,6 +3,7 @@ import os
 import shutil
 
 import random
+import numpy as np
 
 from tqdm import tqdm
 
@@ -11,10 +12,13 @@ from pathlib import Path
 from src.utils.io_utils import ROOT_PATH, read_json, write_json
 from src.datasets.base_dataset import BaseDataset
 
-
 class CEDAR(BaseDataset):
 
-    def __init__(self, path_download, index_dir, *args, **kwargs):
+    def __init__(self, signatures_per_user, path_download, index_dir, *args, **kwargs):
+
+        self.signatures_per_user = signatures_per_user
+
+        self.name = "cedar"
 
         if path_download is None:
             path_download = ROOT_PATH / "data"
@@ -53,34 +57,45 @@ class CEDAR(BaseDataset):
         and forged_num forged signatures of each person
         '''
 
-        index = []
+        index = [[] for i in range(55)]
         index_dir.mkdir(exist_ok=True, parents=True)
 
         genuine_dir = self.dataset_path / "full_org"
         files = os.listdir(genuine_dir)
         print("Parsing genuine signatures into index...")
         for file in tqdm(files):
-            _, extension = os.path.splitext(file)
+            filename, extension = os.path.splitext(file)
             if extension != ".png":
                 continue
-            index.append({
+
+            user_id = self._get_user_id(filename)
+            index[user_id].append({
                 'path': str(genuine_dir / file),
                 'label': 1  # Genuine signatures labeled as 1
             })
 
-        genuine_dir = self.dataset_path / "full_forg"
-        files = os.listdir(genuine_dir)
+        forged_dir = self.dataset_path / "full_forg"
+        files = os.listdir(forged_dir)
         print("Parsing forged signatures into index...")
         for file in tqdm(files):
-            _, extension = os.path.splitext(file)
+            filename, extension = os.path.splitext(file)
             if extension != ".png":
                 continue
-            index.append({
-                'path': str(genuine_dir / file),
+
+            user_id = self._get_user_id(filename)
+            index[user_id].append({
+                'path': str(forged_dir / file),
                 'label': 0  # Forged signatures labeled as 1
             })
         
         write_json(index, index_path)
         return index
+
+    def _get_user_id(self, filename):
+        return int(filename.split("_")[1]) - 1
+
+    def get_user_list(self):
+        users = list(np.arange(len(self._index)))
+        return users
 
 

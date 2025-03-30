@@ -3,6 +3,7 @@ import os
 import shutil
 
 import random
+import numpy as np
 
 from tqdm import tqdm
 
@@ -20,6 +21,9 @@ class UTSig(BaseDataset):
         self.genuine_num = min(genuine_num, 27)
         self.forged_num = {"Skilled": min(skilled_num, 6), "Opposite Hand": min(opposite_num, 3), 
                            "Simple": min(simple_num, 36)}
+        self.signatures_per_user = genuine_num + skilled_num + opposite_num + simple_num
+
+        self.name = "utsig"
 
         if path_download is None:
             path_download = ROOT_PATH / "data"
@@ -57,7 +61,7 @@ class UTSig(BaseDataset):
         and forged_num forged signatures of each person
         '''
 
-        index = []
+        index = [[] for i in range(115)]
         index_dir.mkdir(exist_ok=True, parents=True)
 
         genuine_dir = self.dataset_path / "Genuine"
@@ -68,9 +72,11 @@ class UTSig(BaseDataset):
             if not os.path.isdir(person_path):
                 continue
 
+            user_id = int(genuine_subdirs[i]) - 1
+
             genuine_files = random.sample(sorted(os.listdir(person_path)), self.genuine_num)
             for file in genuine_files:
-                index.append({
+                index[user_id].append({
                     'path': str(person_path / file),
                     'label': 1  # Genuine signatures labeled as 1
                 })
@@ -86,14 +92,17 @@ class UTSig(BaseDataset):
                 person_path = forged_dir / forged_subdirs[i]
                 if not os.path.isdir(person_path):
                     continue
-
+                user_id = int(forged_subdirs[i]) - 1
                 forged_files = random.sample(sorted(os.listdir(person_path)), self.forged_num[type])
                 for file in forged_files:
-                    index.append({
+                    index[user_id].append({
                         'path': str(person_path / file),
                         'label': 0
                     })
         write_json(index, index_path)
         return index
 
+    def get_user_list(self):
+        users = list(np.arange(len(self._index)))
+        return users
 

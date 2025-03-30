@@ -1,3 +1,4 @@
 _target_: src.datasets.CEDAR
+signatures_per_user: 48
 path_download: null
 index_dir: null
