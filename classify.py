@@ -9,8 +9,6 @@ from src.utils.init_utils import set_random_seed
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from src.classifiers import CosineClassifier
-
 
 @hydra.main(version_base=None, config_path="src/configs", config_name="classification")
 def main(config):

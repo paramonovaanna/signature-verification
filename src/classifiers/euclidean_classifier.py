@@ -35,7 +35,6 @@ class EuclideanClassifier(DistanceClassifier):
             genuine_embeddings = self.get_user_signatures(user_id, label=1)
             if len(genuine_embeddings) < m + 1:  # Need m samples + 1 reference
                 continue
-                
             valid_indexes = [i for i in range(len(genuine_embeddings)) if i != self.reference_idx[user_id]]
             samples = random.sample(valid_indexes, m)
             reference = genuine_embeddings[self.reference_idx[user_id]]
@@ -90,7 +89,7 @@ class EuclideanClassifier(DistanceClassifier):
         
         return best_threshold, best_accuracy
 
-    def fix_references(self):
+    def _fix_references(self):
         for user_id in range(self.num_users):
             genuine_sigs = self.get_user_signatures(user_id, label=1)
             index = random.choice(range(len(genuine_sigs)))
@@ -103,6 +102,8 @@ class EuclideanClassifier(DistanceClassifier):
         Returns:
             Dictionary containing analysis results
         """
+        self._fix_references()
+
         logs = []
         for m in self.m_values:
             # Calculate distances
