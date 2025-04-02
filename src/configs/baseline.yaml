@@ -9,15 +9,18 @@ defaults:
    - preprocessor: htcsignet
    - _self_
 
+mode: "standalone"
+
 dataloaders:
    _target_: torch.utils.data.DataLoader
    batch_size: 32
    num_workers: 2
    pin_memory: True
 
-train_test: 
+data: 
    split: 0.9
    users: [301, 1000]
+   modes: ["single", "single"]
 
 optimizer: 
    _target_: torch.optim.AdamW

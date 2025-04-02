@@ -12,8 +12,9 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
-test:
-  users: [1, 300]
+data:
+   users: [51, 55]
+   mode: "triplet"
 
 inferencer:
   device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)

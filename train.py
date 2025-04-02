@@ -4,8 +4,10 @@ from omegaconf import OmegaConf
 import torch
 
 from src.utils.init_utils import set_random_seed, setup_saving_and_logging
-from src.datasets.data_utils import get_dataloaders
+from src.datasets.dataloader_factory import DataLoaderFactory
 from src.trainer import Trainer
+
+from src.preprocessor import HTCSigNetPreprocessor
 
 
 @hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
@@ -25,7 +27,9 @@ def main(config):
     model = instantiate(config.model._model_).to(device)
     logger.info(model)
 
-    dataloaders, batch_transforms = get_dataloaders(config, device)
+    dataloader_factory = DataLoaderFactory(config, device)
+    dataloaders, batch_transforms = dataloader_factory.get_dataloaders(config.data.modes)
+    test_dataloaders, _ = dataloader_factory.get_inference_dataloaders(config.test.mode)
 
     loss_function = instantiate(config.loss).to(device)
     metrics = instantiate(config.metrics)

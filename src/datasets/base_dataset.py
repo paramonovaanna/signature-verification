@@ -2,7 +2,7 @@ import random
 
 from torch.utils.data import Dataset
 
-from src.datasets.loading_utils import load_numpy, load_pil
+from src.datasets.data_utils import load_numpy, load_pil
 
 class BaseDataset(Dataset):
 

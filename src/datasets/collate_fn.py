@@ -16,13 +16,11 @@ def collate_fn(dataset_items: list[dict]):
 
     result_batch = {}
 
-    result_batch["img"] = torch.cat(
-        [elem["img"].unsqueeze(0) for elem in dataset_items], dim=0
-    )
-    result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
-    result_batch["user"] = torch.tensor([elem["user"] for elem in dataset_items])
-
-    result_batch["img"] = result_batch["img"].float()
-    result_batch["labels"] = result_batch["labels"].long()
+    for key in dataset_items[0].keys():
+        if key == "labels" or key == "user":
+            result_batch[key] = torch.tensor([elem[key] for elem in dataset_items]).long()
+        else:
+            result_batch[key] = torch.cat(
+                [elem[key].unsqueeze(0) for elem in dataset_items], dim=0).float()
     
     return result_batch
