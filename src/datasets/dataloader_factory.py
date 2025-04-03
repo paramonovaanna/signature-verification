@@ -24,8 +24,9 @@ class DataLoaderFactory:
         
     def _setup_batch_transforms(self):
         """Initialize and move transforms to device."""
-        self.batch_transforms = instantiate(self.config.transforms.batch_transforms)
-        move_batch_transforms_to_device(self.batch_transforms, self.device)
+        batch_transforms = instantiate(self.config.transforms.batch_transforms)
+        move_batch_transforms_to_device(batch_transforms, self.device)
+        return batch_transforms
         
     def _create_dataset(self):
         """Create and preprocess the base dataset."""
@@ -51,11 +52,9 @@ class DataLoaderFactory:
             self.config.data.split, 
             self.config.data.users
         )
-
         datasets = {"train": PartitionDataset(train_data, self.instance_transforms.train, mode=modes[0])}
         if self.config.data.split != 1.0:
             datasets["test"] = PartitionDataset(test_data, self.instance_transforms.train, mode=modes[1])
-
         dataloaders = {}
         for dataset_partition in datasets.keys():
             dataset = datasets[dataset_partition]

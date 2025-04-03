@@ -18,12 +18,20 @@ class PartitionDataset(Dataset):
         self.instance_transforms = instance_transforms
 
         self.data = []
-        if mode == "triplet":
+        if mode == "triplets":
             self._create_triplets(base_data)
         elif mode == "pairs":
             self._create_pairs(base_data)
-        elif mode == "single":
-            self.data = [base_data[user_id][i] for user_id in range(self.num_users) for i in range(len(base_data[user_id]))]
+        elif mode == "singles":
+            self.data = self._create_singles(base_data)
+
+    def _create_singles(self, base_data):
+        data = []
+        for user_id in range(self.num_users):
+            for i in range(len(base_data[user_id])):
+                instance = base_data[user_id][i]
+                data.append(instance)
+        return data
 
     def _create_triplets(self, base_data):
         """
@@ -40,10 +48,10 @@ class PartitionDataset(Dataset):
                 positive = random.choice([genuine[i] for i in range(len(genuine)) if i != idx])
                 negative = random.choice(forged)
 
-                triplet["anchor"] = anchor
-                triplet["pos"] = positive
-                triplet["neg"] = negative
-            self.data.append(triplet)
+                triplet["anchor"] = anchor["img"]
+                triplet["pos"] = positive["img"]
+                triplet["neg"] = negative["img"]
+                self.data.append(triplet)
 
     def _create_pairs(self, base_data):
         for user_id in range(self.num_users):
@@ -55,11 +63,11 @@ class PartitionDataset(Dataset):
             for i in range(len(genuine)):
                 if i == reference_idx:
                     continue
-                pair = {"user": user_id, "ref": reference, "img": genuine[i]}
+                pair = {"user": user_id, "ref": reference["img"], "sig": genuine[i]["img"], "labels": 1}
                 self.data.append(pair)
 
             for forg_sig in forged:
-                pair = {"user": user_id, "ref": reference, "img": forg_sig}
+                pair = {"user": user_id, "ref": reference["img"], "sig": forg_sig["img"], "labels": 0}
                 self.data.append(pair)
 
     def transform_data(self, instance_data):
@@ -76,16 +84,16 @@ class PartitionDataset(Dataset):
                 (a single dataset element) (possibly transformed via
                 instance transform).
         """
-        for key in instance_data.keys():
-            if key == "user":
-                continue
-            instance_data[key] = self.instance_transforms(instance_data[key])
+        if self.instance_transforms is not None:
+            instance_data = self.instance_transforms(instance_data)
         return instance_data
     
     def __getitem__(self, idx):
         instance = self.data[idx]
-        if self.instance_transforms is not None:
-            instance = self.transform_data(instance)
+        for key in instance.keys():
+            if key == "user" or key == "labels":
+                continue
+            instance[key] = self.transform_data(instance[key])
         return instance
     
     def __len__(self) -> int:

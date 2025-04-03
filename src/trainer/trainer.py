@@ -35,7 +35,9 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
 
         outputs = self.model(**batch)
-        outputs["logits"] = outputs["logits"].squeeze(1)
+        for key in ["logits", "s_emb", "r_emb", "a_emb", "n_emb", "p_emb"]:
+            if outputs.get(key, None) is not None:
+                outputs[key] = outputs[key].squeeze(1)
         batch.update(outputs)
 
         all_losses = self.criterion(**batch)
@@ -56,19 +58,19 @@ class Trainer(BaseTrainer):
             metrics.update(met.name, met(**batch))
         return batch
 
-    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
+    def _calculate_epoch_metrics(self, values, labels, metrics: MetricTracker):
         """ In this version: only calculate EER, EER_Accuracy"""
         metric_funcs = self.metrics["test"]["epoch"]
 
         for met in metric_funcs:
             if met.name == "EER":
-                eer, threshold = met(all_logits, all_labels)
-                eer_accuracy = met.get_eer_accuracy(all_logits, all_labels, threshold)
+                eer, threshold = met(values, labels)
+                eer_accuracy = met.get_eer_accuracy(values, labels, threshold)
                 metrics.update("EER", eer)
                 metrics.update("EER_Accuracy", eer_accuracy)
                 metrics.update("Threshold", threshold)
             else:
-                metrics.update(met.name, met(all_logits, all_labels))
+                metrics.update(met.name, met(values, labels))
     
     def _log_batch(self, batch_idx, batch, mode="train"):
         """
@@ -82,11 +84,21 @@ class Trainer(BaseTrainer):
             mode (str): train or inference. Defines which logging
                 rules to apply.
         """
-        if mode == "train":
-            img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
-            self.writer.add_image("image", img)
+        if batch.get("anchor", None) is not None:
+            img = batch["anchor"][0].detach().cpu().numpy().transpose(1, 2, 0)
+            self.writer.add_image("anchor", img)
+            img = batch["pos"][0].detach().cpu().numpy().transpose(1, 2, 0)
+            self.writer.add_image("positive", img)
+            img = batch["neg"][0].detach().cpu().numpy().transpose(1, 2, 0)
+            self.writer.add_image("negative", img)
+            
+        elif batch.get("ref", None) is not None:
+            img = batch["ref"][0].detach().cpu().numpy().transpose(1, 2, 0)
+            self.writer.add_image("reference", img)
+            img = batch["sig"][0].detach().cpu().numpy().transpose(1, 2, 0)
+            self.writer.add_image("signature", img)
+
         else:
             img = batch["img"][0].detach().cpu().numpy().transpose(1, 2, 0)
             self.writer.add_image("image", img)
-
 

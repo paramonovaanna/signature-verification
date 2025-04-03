@@ -1,6 +1,8 @@
 from abc import abstractmethod
 
 import torch
+import torch.nn as nn
+
 import numpy as np
 from numpy import inf
 from torch.nn.utils import clip_grad_norm_
@@ -19,6 +21,7 @@ class BaseTrainer:
     def __init__(
         self,
         model,
+        mode,
         criterion,
         metrics,
         optimizer,
@@ -60,6 +63,9 @@ class BaseTrainer:
 
         self.config = config
         self.cfg_trainer = self.config.trainer
+
+        self.mode = mode
+        self.similarity_fn = nn.CosineSimilarity(dim=1, eps=1e-8) # for siamese networks
 
         self.device = device
         self.skip_oom = skip_oom
@@ -269,22 +275,30 @@ class BaseTrainer:
         self.evaluation_metrics.reset()
 
         with torch.no_grad():
-            all_logits, all_labels = [], []
+            values, labels = [], []
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
                 desc=part,
                 total=len(dataloader),
             ):
-                batch = self.process_batch(
-                    batch,
-                    metrics=self.evaluation_metrics,
-                )
-                all_logits.append(batch["logits"].cpu().numpy())
-                all_labels.append(batch["labels"].cpu().numpy())
+                if self.mode == "siamese":
+                    outputs = self.model.forward(**batch)
+                    outputs["r_emb"] = outputs["r_emb"].squeeze(1)
+                    outputs["s_emb"] = outputs["s_emb"].squeeze(1)
+                    batch.update(outputs)
+                    probs = self._calculate_probs(outputs["r_emb"], outputs["s_emb"])
+                    values.append(probs)
+                else: 
+                    batch = self.process_batch(
+                        batch=batch,
+                        metrics=self.evaluation_metrics,
+                    )
+                    values.append(batch["logits"].cpu().numpy())
+                labels.append(batch["labels"].cpu().numpy())
 
-            all_logits = np.concatenate(all_logits)
-            all_labels = np.concatenate(all_labels)
-            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
+            values = np.concatenate(values)
+            labels = np.concatenate(labels)
+            self._calculate_epoch_metrics(values, labels, self.evaluation_metrics)
     
             self.writer.set_step(epoch * self.epoch_len, part)
             self._log_scalars(self.evaluation_metrics)
@@ -293,6 +307,13 @@ class BaseTrainer:
             )  # log only the last batch during inference
 
         return self.evaluation_metrics.result()
+
+    def _calculate_probs(self, ref_emb, sig_emb):
+        similarities = self.similarity_fn(ref_emb, sig_emb)
+        genuine_prob = (similarities.unsqueeze(1) + 1) / 2
+        forged_prob = 1 - genuine_prob
+        probs = torch.cat([forged_prob, genuine_prob], dim=1).cpu().numpy()
+        return probs
 
     def _monitor_performance(self, logs, not_improved_count):
         """

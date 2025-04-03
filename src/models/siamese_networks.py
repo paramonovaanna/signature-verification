@@ -15,17 +15,23 @@ class SiameseNetwork(nn.Module):
         )
         
     def forward_one(self, x):
-        return self.backbone(x)["logits"]
-    
-    def forward(self, anchor, positive, negative, **batch):
-        anchor_embedding = self.forward_one(anchor)
-        positive_embedding = self.forward_one(positive)
-        negative_embedding = self.forward_one(negative)
+        image = {"img": x}
+        return self.backbone(**image)["logits"]
 
+    def forward_triplet(self, anchor, pos, neg, **batch):
+        anchor_embedding = self.forward_one(anchor)
+        positive_embedding = self.forward_one(pos)
+        negative_embedding = self.forward_one(neg)
         return {"a_emb": anchor_embedding, "p_emb": positive_embedding, "n_emb": negative_embedding}
 
-    def test_forward(self, reference, sig, **batch):
-        reference_embedding = self.forward_one(reference)
+    def forward_pair(self, ref, sig, **batch):
+        reference_embedding = self.forward_one(ref)
         sig_embedding = self.forward_one(sig)
 
         return {"r_emb": reference_embedding, "s_emb": sig_embedding}
+
+    def forward(self, **batch):
+        if batch.get("anchor", None) is not None:
+            return self.forward_triplet(**batch)
+        elif batch.get("ref", None) is not None:
+            return self.forward_pair(**batch)

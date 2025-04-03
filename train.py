@@ -7,6 +7,8 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 from src.datasets.dataloader_factory import DataLoaderFactory
 from src.trainer import Trainer
 
+from src.models import SiameseNetwork
+
 from src.preprocessor import HTCSigNetPreprocessor
 
 
@@ -25,11 +27,12 @@ def main(config):
     logger.info(device)
 
     model = instantiate(config.model._model_).to(device)
+    if config.mode == "siamese":
+        model = SiameseNetwork(model)
     logger.info(model)
 
     dataloader_factory = DataLoaderFactory(config, device)
     dataloaders, batch_transforms = dataloader_factory.get_dataloaders(config.data.modes)
-    test_dataloaders, _ = dataloader_factory.get_inference_dataloaders(config.test.mode)
 
     loss_function = instantiate(config.loss).to(device)
     metrics = instantiate(config.metrics)
@@ -39,6 +42,7 @@ def main(config):
 
     trainer = Trainer(
         model=model,
+        mode=config.mode,
         criterion=loss_function,
         metrics=metrics,
         optimizer=optimizer,
