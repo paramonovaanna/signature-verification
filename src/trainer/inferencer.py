@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from tqdm.auto import tqdm
 
 import numpy as np
@@ -19,6 +20,7 @@ class Inferencer(BaseTrainer):
     def __init__(
         self,
         model,
+        mode,
         config,
         device,
         dataloaders,
@@ -53,11 +55,14 @@ class Inferencer(BaseTrainer):
             skip_model_load or config.inferencer.get("from_pretrained") is not None
         ), "Provide checkpoint or set skip_model_load=True"
 
+        self.similarity_fn = nn.CosineSimilarity(dim=1, eps=1e-8) # for siamese networks
+
         self.config = config
         self.cfg_trainer = self.config.inferencer
 
         self.device = device
 
+        self.mode = mode
         self.model = model
         self.batch_transforms = batch_transforms
 
@@ -134,30 +139,6 @@ class Inferencer(BaseTrainer):
             for met in self.metrics["inference"]["batch"]:
                 metrics.update(met.name, met(**batch))
 
-        # Some saving logic. This is an example
-        # Use if you need to save predictions on disk
-
-        batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
-
-        for i in range(batch_size):
-            # clone because of
-            # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
-
-            output_id = current_id + i
-
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
-
         return batch
 
     def _inference_part(self, part, dataloader):
@@ -181,43 +162,52 @@ class Inferencer(BaseTrainer):
             (self.save_path / part).mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
-            all_logits, all_labels = [], []
+            values, labels = [], []
             for batch_idx, batch in tqdm(
                 enumerate(dataloader),
                 desc=part,
                 total=len(dataloader),
             ):
-                batch = self.process_batch(
-                    batch_idx=batch_idx,
-                    batch=batch,
-                    part=part,
-                    metrics=self.evaluation_metrics,
-                )
-                all_logits.append(batch["logits"].cpu().numpy())
-                all_labels.append(batch["labels"].cpu().numpy())
+                if self.mode == "siamese":
+                    outputs = self.model.forward(**batch)
+                    outputs["r_emb"] = outputs["r_emb"].squeeze(1)
+                    outputs["s_emb"] = outputs["s_emb"].squeeze(1)
+                    batch.update(outputs)
+                    probs = self._calculate_probs(outputs["r_emb"], outputs["s_emb"])
+                    values.append(probs)
+                else: 
+                    batch = self.process_batch(
+                        batch_idx=batch_idx,
+                        batch=batch,
+                        part=part,
+                        metrics=self.evaluation_metrics,
+                    )
+                    values.append(batch["logits"].cpu().numpy())
 
-            all_logits = np.concatenate(all_logits)
-            all_labels = np.concatenate(all_labels)
-            self._calculate_epoch_metrics(all_logits, all_labels, self.evaluation_metrics)
+                labels.append(batch["labels"].cpu().numpy())
+
+            values = np.concatenate(values)
+            labels = np.concatenate(labels)
+            self._calculate_epoch_metrics(values, labels, self.evaluation_metrics)
 
         return self.evaluation_metrics.result()
 
-    def _calculate_epoch_metrics(self, all_logits, all_labels, metrics: MetricTracker):
+    def _calculate_epoch_metrics(self, values, labels, metrics: MetricTracker):
         """ In this version: only calculate EER, EER_Accuracy"""
         """ We calculate two EER accuracies: using threshold from EER and from the trained model"""
         metric_funcs = self.metrics["inference"]["epoch"]
 
         for met in metric_funcs:
             if met.name == "EER":
-                eer, threshold = met(all_logits, all_labels)
+                eer, threshold = met(values, labels)
                 
-                eer_accuracy = met.get_eer_accuracy(all_logits, all_labels, threshold)
+                eer_accuracy = met.get_eer_accuracy(values, labels, threshold)
                 metrics.update("EER", eer)
                 metrics.update("EER_Accuracy", eer_accuracy)
                 metrics.update("Threshold", threshold)
                 if self.optim_threshold is not None:
-                    eer_optim_accuracy = met.get_eer_accuracy(all_logits, all_labels, self.optim_threshold)
+                    eer_optim_accuracy = met.get_eer_accuracy(values, labels, self.optim_threshold)
                     metrics.update("EER_Optim_Accuracy", eer_optim_accuracy)
                     metrics.update("Optim_Threshold", self.optim_threshold)
             else:
-                metrics.update(met.name, met(all_logits, all_labels))
+                metrics.update(met.name, met(values, labels))

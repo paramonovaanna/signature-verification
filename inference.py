@@ -6,6 +6,8 @@ from hydra.utils import instantiate
 
 from src.datasets.dataloader_factory import DataLoaderFactory
 
+from src.models import SiameseNetwork
+
 from src.trainer import Inferencer
 from src.utils.init_utils import set_random_seed
 from src.utils.io_utils import ROOT_PATH
@@ -37,6 +39,8 @@ def main(config):
 
     # build model architecture, then print to console
     model = instantiate(config.model._model_).to(device)
+    if config.mode == "siamese":
+        model = SiameseNetwork(model)
     print(model)
 
     # get metrics
@@ -48,6 +52,7 @@ def main(config):
 
     inferencer = Inferencer(
         model=model,
+        mode=config.mode,
         config=config,
         device=device,
         dataloaders=dataloaders,

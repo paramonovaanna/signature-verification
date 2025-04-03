@@ -6,6 +6,8 @@ defaults:
   - preprocessor: htcsignet
   - _self_
 
+mode: "standalone"
+
 dataloaders:
    _target_: torch.utils.data.DataLoader
    batch_size: 32
@@ -13,8 +15,8 @@ dataloaders:
    pin_memory: True
 
 data:
-   users: [51, 55]
-   mode: "triplet"
+   users: [1, 300]
+   mode: "singles"
 
 inferencer:
   device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
