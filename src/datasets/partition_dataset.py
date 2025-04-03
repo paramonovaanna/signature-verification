@@ -30,6 +30,7 @@ class PartitionDataset(Dataset):
         for user_id in range(self.num_users):
             for i in range(len(base_data[user_id])):
                 instance = base_data[user_id][i]
+                instance["user"] = user_id
                 data.append(instance)
         return data
 

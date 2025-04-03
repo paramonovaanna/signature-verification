@@ -4,8 +4,11 @@ import hydra
 import torch
 from hydra.utils import instantiate
 
-from src.datasets.data_utils import get_inference_dataloaders
+from src.datasets import DataLoaderFactory
+from src.embeddings import EmbeddingsExtractor
 from src.utils.init_utils import set_random_seed
+
+from src.models import SiameseNetwork
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -14,27 +17,41 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def main(config):
     set_random_seed(config.seed)
 
-    if config.classifier.device == "auto":
+    if config.embeddings.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
-        device = config.classifier.device
+        device = config.embeddings.device
 
-    dataloaders, batch_transforms = get_inference_dataloaders(config, device)
+    dataloader_factory = DataLoaderFactory(config, device)
+    dataloaders, batch_transforms = dataloader_factory.get_inference_dataloaders(config.data.mode)
 
     # build model architecture, then print to console
     model = instantiate(config.model._model_).to(device)
+    if config.mode == "siamese":
+        model = SiameseNetwork(model)
     print(model)
 
-    num_users = config.test.users[1] - config.test.users[0] + 1
+    num_users = config.data.users[1] - config.data.users[0] + 1
 
-    classifier = instantiate(config.classifier,
+    emb_extractor = EmbeddingsExtractor(config.embeddings,
+        device=device,
+        dataloaders=dataloaders, 
         model=model,
-        dataloader=dataloaders["inference"],
-        batch_transforms=batch_transforms,
-        num_users=num_users,
-        device=device
+        data_mode=config.data.mode,
     )
-    classifier.extract_embeddings()
+    data = emb_extractor.extract()["inference"]
+    if data.get("emb", None) is not None:
+        embeddings = data["emb"]
+    else:
+        embeddings = data["s_emb"]
+
+    classifier = instantiate(config.classifier, 
+        num_users=num_users,
+        user2emb=data["user"],
+        labels=data["labels"],
+        embeddings=embeddings,
+        references=data.get("r_emb", None)
+    )
 
     logs = classifier.classify()
     for log in logs:

@@ -23,6 +23,8 @@ class ConvNeXt_21k(nn.Module):
         n_features = self.model.head.fc.in_features
         self.model.head.fc = nn.Linear(in_features=n_features, out_features=2, bias=True)
 
+        self.name = "convnext"
+
         if freeze_no is not None:
             self.freeze_layers(freeze_no)
 

@@ -6,6 +6,7 @@ class SiameseNetwork(nn.Module):
     def __init__(self, model, embedding_dim=512):
         super().__init__()
         self.backbone = model
+        self.name = f"siam_{self.backbone.name}"
 
         num_features = self.backbone.model.head.fc.in_features
         self.backbone.model.head.fc = nn.Sequential(
@@ -35,3 +36,6 @@ class SiameseNetwork(nn.Module):
             return self.forward_triplet(**batch)
         elif batch.get("ref", None) is not None:
             return self.forward_pair(**batch)
+
+    def features(self, **batch):
+        return self.forward(**batch)

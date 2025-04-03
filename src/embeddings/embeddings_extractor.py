@@ -8,56 +8,58 @@ from src.utils.io_utils import ROOT_PATH
 
 class EmbeddingsExtractor:
 
-    def __init__(self, models, pretrained_paths, device, device_tensors=["img, labels"], siamese=False):  
+    DATA_STRUCTURE = {
+        "triplets": ["a_emb", "n_emb", "p_emb", "user"],
+        "pairs": ["r_emb", "s_emb", "labels", "user"],
+        "singles": ["emb", "labels", "user"]
+    }
+
+    def __init__(self, config,
+        model, 
+        data_mode,
+        device, 
+        dataloaders=None, 
+    ):  
+
         self.device = device
-        self.device_tensors = device_tensors
-        self.siamese = siamese
+        self.device_tensors = config.device_tensors
 
-        self.model1 = self._init_model(models[0], pretrained_paths[0])
-        self.model2 = None
-        if models[1] is not None:
-            self.model2 = self._init_model(models[1], pretrained_paths[1])
+        self.model = self._init_model(model, config.from_pretrained)
 
-    def extract(self, save_dir=None, filename=None, dataloaders=None):
+        self.dataloaders = dataloaders
+        self.data_mode = data_mode
+        self.data_struct = self.DATA_STRUCTURE[data_mode]
+
+    def extract(self, save_dir=None, filename=None):
         filepath = self._get_path(save_dir, filename)
 
         if not os.path.exists(filepath):
-            assert self.model1 is not None, ("Must provide a model")
-            assert dataloaders is not None, ("Must provide dataloaders")
-            assert self.device is not None, ("Must provide a device")
+            assert self.dataloaders is not None, ("Must provide dataloaders")
 
-            print("Extracting embeddings...")
-            emb, labels = self.extract_and_save(filepath, dataloaders)
+            data = self.extract_and_save(filepath)
         else:
-            emb, labels = self.load(filepath)
-        return emb, labels
+            data = self.load(filepath)
+        return data
 
     def load(self, filepath):
-        emb, labels = {}, {}
-        with np.load(filepath, allow_pickle=True) as data:
-            for partition in ["train", "test", "inference"]:
-                emb[partition] = data[f"{partition}_embeddings"]
-                labels[partition] = data[f"{partition}_labels"]
-        return emb, labels
+        data = {"train": {}, "validation": {}, "inference": {}}
+        with np.load(filepath, allow_pickle=True) as save_data:
+            save_data = dict(save_data)
+            for key in save_data:
+                partition, name = key.split("-")
+                data[partition][name] = save_data[key]
+        return data
 
-    def extract_and_save(self, filepath, dataloaders):
-        emb, labels = {}, {}
-        for partition in ["inference", "train", "test"]:
-            if self.siamese:
-                emb[partition], labels[partition] = self.extract_embeddings_siamese(dataloaders[partition])
-            else:
-                emb[partition], labels[partition] = self.extract_embeddings(dataloaders[partition])
+    def extract_and_save(self, filepath):
+        data, save_data = {}, {}
+        for partition in self.dataloaders.keys():
+            data[partition] = self.extract_embeddings(self.dataloaders[partition])
 
-        np.savez(
-            filepath,
-            train_embeddings=emb["train"],
-            test_embeddings=emb["test"],
-            inference_embeddings=emb["inference"],
-            train_labels=labels["train"],
-            test_labels=labels["test"],
-            inference_labels=labels["inference"]
-        )
-        return emb, labels
+            partition_data = {f"{partition}-{key}": value for key, value in data[partition].items()}
+            save_data.update(partition_data)
+
+        np.savez(filepath, **save_data)
+        return data
 
     def extract_embeddings(self, dataloader):
         """
@@ -74,55 +76,56 @@ class EmbeddingsExtractor:
         Returns:
             Tuple[np.ndarray, np.ndarray]: эмбеддинги и метки
         """
-        self.model1.eval()
-        if self.model2 is not None:
-            self.model2.eval()
-        embeddings = []
+        self.model.eval()
+        data = {name: [] for name in self.data_struct}
         labels = []
 
         with torch.no_grad():
             for batch in tqdm(dataloader, desc=f"Extracting embeddings..."):
                 batch = self.move_batch_to_device(batch)
 
-                outputs = self.model1.features(**batch)["emb"]
-                outputs = outputs.mean(axis=(2, 3))
-                if self.model2 is not None:
-                    outputs2 = self.model2.features(**batch)["emb"]
-                    outputs2 = outputs2.mean(axis=(2, 3))
-                    outputs = 0.5 * (outputs + outputs2)
+                outputs = self.model.features(**batch)
+                batch.update(outputs)
 
-                embeddings.append(outputs.cpu().numpy())
-
-                labels.append(batch['labels'].cpu().numpy())
-
-            embeddings = np.vstack(embeddings)
-            labels = np.concatenate(labels)
-       
-        return embeddings, labels
+                for key in data.keys():
+                    value = batch[key].cpu().numpy()
+                    data[key].append(value)
+        for key in data.keys():
+            data[key] = np.concatenate(data[key])
+        return data
 
     def extract_embeddings_siamese(self, dataloader):
-        self.model1.eval()
-        if self.model2 is not None:
-            self.model2.eval()
-        embeddings = []
+        for i in range(len(self.models)):
+            self.models[i].eval()
+        embeddings = {"siam": [], "ref": [], "coat": [], "conv": []}
         labels = []
 
         with torch.no_grad():
             for batch in tqdm(dataloader, desc=f"Extracting embeddings..."):
                 batch = self.move_batch_to_device(batch)
 
-                outputs = self.model1.test_forward(**batch)
-                emb1 = outputs["r_emb"].cpu().numpy()
-                emb2 = outputs["s_emb"].cpu().numpy()
-                euclidean_dist = np.linalg.norm(emb1 - emb2, axis=1)
-                outputs = euclidean_dist
+                quad = {}
+                for i in range(len(self.models)):
+                    if self.siamese[i]:
+                        outputs = self.models[i].test_forward(**batch)
+                        emb1 = outputs["r_emb"].cpu().numpy()
+                        emb2 = outputs["s_emb"].cpu().numpy()
+                        quad["siam"] = emb1
+                        quad["ref"] = emb2
+                    else:
+                        outputs = self.models[i].features(**batch)["emb"]
+                        outputs = outputs.mean(axis=(2, 3))
+                        if i == 2:
+                            quad["coat"] = outputs.cpu().numpy()
+                        else: 
+                            quad["conv"] = outputs.cpu().numpy()
 
-                embeddings.append(outputs)
+                for key in quad.keys():
+                    embeddings[key].append(quad[key])
                 labels.append(batch['labels'].cpu().numpy())
-
-            embeddings = np.concatenate(embeddings).reshape(-1, 1)
-            labels = np.concatenate(labels).reshape(-1, 1)
-       
+            for key in quad.keys():
+                embeddings[key] = np.concatenate(embeddings[key])
+            labels = np.concatenate(labels)
         return embeddings, labels
 
     def _init_model(self, model, pretrained_path):
@@ -153,7 +156,7 @@ class EmbeddingsExtractor:
             save_dir = ROOT_PATH / "data" / "embeddings"
         os.makedirs(save_dir, exist_ok=True)
         if filename is None:
-            filename = f"{self.models[0].name}_{self.models[1].name if self.models[1] is not None else ''}.npz"
+            filename = f"{self.model.name}_{self.data_mode}.npz"
         filepath = os.path.join(save_dir, filename)
         return filepath
     

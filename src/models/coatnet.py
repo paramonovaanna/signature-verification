@@ -25,6 +25,8 @@ class CoAtNet(nn.Module):
         n_features = self.model.head.fc.in_features
         self.model.head.fc = nn.Linear(in_features=n_features, out_features=2, bias=True)
 
+        self.name = "coatnet"
+
         if freeze_no is not None:
             self.freeze_layers(freeze_no)
 
@@ -56,7 +58,7 @@ class CoAtNet(nn.Module):
         return {"logits": self.model(img)}
 
     def features(self, img, **batch):
-        return {"emb": self.model.forward_features(img)}
+        return {"emb": self.model.forward_features(img).mean(axis=(2, 3))}
 
     def freeze_layers(self, num_layers=None):
         assert num_layers < len(self.model.stages) + 1

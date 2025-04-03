@@ -1,10 +1,12 @@
 defaults:
   - model: coatnet-base
-  - dataset: gpds_synthetic # we do not want to run inference on training data
+  - dataset: cedar # we do not want to run inference on training data
   - transforms: with_preprocess
   - preprocessor: htcsignet
   - classifier: cosine
   - _self_
+
+mode: "standalone"
 
 seed: 42
 
@@ -14,5 +16,11 @@ dataloaders:
    num_workers: 2
    pin_memory: True
 
-test:
-  users: [1, 300]
+data:
+  users: [51, 55]
+  mode: "singles"
+
+embeddings:
+  from_pretrained: "saved/coatnetB-0.9split/model_best.pth"
+  device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"

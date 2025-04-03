@@ -1,6 +1,3 @@
 _target_: src.classifiers.CosineClassifier
-threshold: 15
-m_values: [1, 12]
-device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
-device: auto # device name or "auto"
-from_pretrained: "saved/coatnetB-0.9split/model_best.pth"
+threshold: 0.99
+m_values: [1, 13]
