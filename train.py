@@ -28,7 +28,7 @@ def main(config):
 
     model = instantiate(config.model._model_).to(device)
     if config.mode == "siamese":
-        model = SiameseNetwork(model)
+        model = SiameseNetwork(model).to(device)
     logger.info(model)
 
     dataloader_factory = DataLoaderFactory(config, device)

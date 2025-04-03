@@ -28,7 +28,7 @@ def main(config):
     # build model architecture, then print to console
     model = instantiate(config.model._model_).to(device)
     if config.mode == "siamese":
-        model = SiameseNetwork(model)
+        model = SiameseNetwork(model).to(device)
     print(model)
 
     num_users = config.data.users[1] - config.data.users[0] + 1
