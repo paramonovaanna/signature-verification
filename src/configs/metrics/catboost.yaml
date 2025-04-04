@@ -1,0 +1,7 @@
+train: []
+validation:
+  - _target_: src.metrics.EER
+    name: "EER"
+inference:
+  - _target_: src.metrics.EER
+    name: "EER"

@@ -1,109 +1,66 @@
 import torch
-
 import os
-
-from src.utils.init_utils import set_random_seed
+import numpy as np
 
 import hydra 
 from hydra.utils import instantiate
-
-from src.siamese_data.data_utils import get_dataloaders, get_inference_dataloaders
-
-from src.embeddings import EmbeddingsExtractor
-
-from src.models.siamese_networks import SiameseNetwork
+from omegaconf import OmegaConf
 
 from src.utils.io_utils import ROOT_PATH
 
-import numpy as np
+from src.utils.init_utils import set_random_seed
 
-from sklearn.metrics import accuracy_score, roc_curve, auc
-
-from catboost import CatBoostClassifier
+from src.datasets import DataLoaderFactory
+from src.embeddings import EmbeddingsExtractor
+from src.models import SiameseNetwork
+from src.models import CBClassifier
 
 @hydra.main(version_base=None, config_path="src/configs", config_name="catboost")
 def main(config):
     set_random_seed(config.seed)
 
-    if config.device.device == "auto":
+    if config.embeddings.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
-        device = config.device.device
+        device = config.embeddings.device
 
-    model1 = instantiate(config.model._model_).to(device)
-    model1 = SiameseNetwork(model1).to(device)
-    #model2 = instantiate(config.model2._model_).to(device)
+    model = instantiate(config.model._model_).to(device)
+    if config.mode == "siamese":
+        model = SiameseNetwork(model).to(device)
 
-    dataloaders, batch_transforms = get_dataloaders(config, device)
-    test_dataloaders, batch_transforms = get_inference_dataloaders(config, device)
-    dataloaders.update(test_dataloaders)
+    dataloader_factory = DataLoaderFactory(config=config, 
+        device=device, 
+        train_config=config.train_data, 
+        test_config=config.test_data
+    )
+    dataloaders, batch_transforms = dataloader_factory.get_dataloaders()
+    inference_dataloaders, _ = dataloader_factory.get_inference_dataloaders()
+    dataloaders.update(inference_dataloaders)
 
-    extractor = EmbeddingsExtractor(
-        models=[model1, None], 
-        pretrained_paths=config.embeddings.pretrained_paths,
+    data_modes = {"train": config.train_data.modes[0], 
+        "validation": config.train_data.modes[1], 
+        "inference": config.test_data.mode
+    }
+
+    emb_extractor = EmbeddingsExtractor(config.embeddings,
         device=device,
-        device_tensors=config.device.device_tensors, 
-        siamese=True
+        dataloaders=dataloaders, 
+        model=model,
+        data_modes=data_modes
     )
-    emb, labels = extractor.extract(
-        save_dir=config.embeddings.save_dir,
-        filename=config.embeddings.filename,
-        dataloaders=dataloaders,
-    )
+    data = emb_extractor.extract()
 
-    classifier = instantiate(config.catboost)
-    print("Training...")
-    classifier.fit(
-        emb["train"], labels["train"],
-        eval_set=(emb["inference"], labels["inference"])
-    )
-    classifier.save_model('catboost_model.cbm')
+    metrics = instantiate(config.metrics)
 
-    loaded_model = CatBoostClassifier()
-    loaded_model.load_model('catboost_model.cbm')
+    classifier_config = OmegaConf.to_container(config.catboost)
 
-    val_pred = loaded_model.predict(emb["inference"])
-    val_acc = np.mean(val_pred == labels["inference"])
-    print(f"Inference original accuracy: {val_acc:.4f}")
+    classifier = CBClassifier(data=data, metrics=metrics, **classifier_config)
 
-    y_pred_proba = loaded_model.predict_proba(emb["inference"])[:, 1]
-    fpr, tpr, thresholds = roc_curve(labels["inference"], y_pred_proba)
-    optimal_idx = np.argmax(abs(tpr - fpr))
-    eer = np.mean((fpr[optimal_idx], tpr[optimal_idx]))
-    print("EER:", eer)
-    optimal_threshold = thresholds[optimal_idx]
-    y_pred = (y_pred_proba > optimal_threshold).astype(int)
-    acc = accuracy_score(labels["inference"], y_pred)
-    print(f"Threshold {optimal_threshold:.2f}: eer_accuracy {acc:.4f}")
-
-
-    y_pred = (y_pred_proba > 0.5).astype(int)
-    acc = accuracy_score(labels["inference"], y_pred)
-    print(f"Prob accuracy on inference set: {acc:.4f}")
-
-
-    evals_result = classifier.get_evals_result()
-    best_accuracy = evals_result['validation']['Accuracy'][classifier.best_iteration_]
-    print(f"Internal best accuracy: {best_accuracy:.4f}")
-
-    # Получаем вероятности
-    """y_pred_proba = classifier.predict_proba(emb["inference"], ntree_end=classifier.best_iteration_)[:, 1]
-
-
-    print("Evaluating...")
-    val_pred = classifier.predict(emb["test"])
-    print(val_pred.shape, emb["test"].shape, labels["test"].shape)
-    val_acc = np.mean(val_pred == labels["test"])
-    print(f"Test accuracy: {val_acc:.4f}")
-    
-    test_pred = classifier.predict(emb["inference"])
-    test_acc = np.mean(test_pred == labels["inference"])
-    print(f"Inference accuracy: {test_acc:.4f}")"""
-    
-    """save_dir = ROOT_PATH / "checkpoints" / "catboost"
-    os.makedirs(save_dir, exist_ok=True)
-    classifier.model.save_model(os.path.join(save_dir, "coatnetL-0.9split_classifier.cbm"))
-    print(f"Model saved to {save_dir}/coatnetL-0.9split_classifier.cbm")"""
+    logs = classifier.classify()
+    for part in logs.keys():
+        for key, value in logs[part].items():
+            full_key = part + "_" + key
+            print(f"    {full_key:15s}: {value}")
 
 
 if __name__ == "__main__":

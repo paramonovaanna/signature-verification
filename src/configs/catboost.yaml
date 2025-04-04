@@ -1,11 +1,12 @@
 defaults:
-  - dataset: gpds_synthetic
+  - dataset: cedar
   - transforms: with_preprocess
   - model: convnext-21k
-  - loss: cross_entropy_loss
-  - metrics: metrics
+  - metrics: catboost
   - preprocessor: htcsignet 
   - _self_
+
+mode: "standalone"
 
 dataloaders:
    _target_: torch.utils.data.DataLoader
@@ -14,25 +15,24 @@ dataloaders:
    pin_memory: True
 
 embeddings:
-  pretrained_paths: ["saved/SconvnextB_infer/model_best.pth"]
-  save_dir: null
-  filename: "SconvnextB_infer_dist.npz"
+  from_pretrained: "saved/convnext_cedar/model_best.pth"
+  device_tensors: ["img", "labels"] # which tensors should be on device (ex. GPU)
+  device: auto # device name or "auto"
 
-train_test:
-  users: [301, 1000]
+train_data:
+  modes: ["singles", "singles"]
+  users: [1, 50]
   split: 0.9
 
-test:
-  users: [1, 300]
-
-device:
-  device: "auto"
-  device_tensors: ["reference", "sig", "labels"]
+test_data:
+  mode: "pairs"
+  users: [51, 55]
 
 seed: 42
 
 catboost:
-  _target_: catboost.CatBoostClassifier
+  save_filename: null
+  from_pretrained: null
   task_type: "CPU"
   iterations: 1000
   learning_rate: 1e-4
