@@ -16,7 +16,7 @@ class EmbeddingsExtractor:
 
     def __init__(self, config,
         model, 
-        data_mode,
+        data_modes,
         device, 
         dataloaders=None, 
     ):  
@@ -27,8 +27,8 @@ class EmbeddingsExtractor:
         self.model = self._init_model(model, config.from_pretrained)
 
         self.dataloaders = dataloaders
-        self.data_mode = data_mode
-        self.data_struct = self.DATA_STRUCTURE[data_mode]
+
+        self.data_structs = {partition: self.DATA_STRUCTURE[data_modes[partition]] for partition in dataloaders.keys()}
 
     def extract(self, save_dir=None, filename=None):
         filepath = self._get_path(save_dir, filename)
@@ -53,7 +53,7 @@ class EmbeddingsExtractor:
     def extract_and_save(self, filepath):
         data, save_data = {}, {}
         for partition in self.dataloaders.keys():
-            data[partition] = self.extract_embeddings(self.dataloaders[partition])
+            data[partition] = self.extract_embeddings(self.dataloaders[partition], self.data_structs[partition])
 
             partition_data = {f"{partition}-{key}": value for key, value in data[partition].items()}
             save_data.update(partition_data)
@@ -61,7 +61,7 @@ class EmbeddingsExtractor:
         np.savez(filepath, **save_data)
         return data
 
-    def extract_embeddings(self, dataloader):
+    def extract_embeddings(self, dataloader, data_struct):
         """
         Извлекает эмбеддинги из модели и сохраняет их
         
@@ -77,7 +77,7 @@ class EmbeddingsExtractor:
             Tuple[np.ndarray, np.ndarray]: эмбеддинги и метки
         """
         self.model.eval()
-        data = {name: [] for name in self.data_struct}
+        data = {name: [] for name in data_struct}
         labels = []
 
         with torch.no_grad():
@@ -156,7 +156,7 @@ class EmbeddingsExtractor:
             save_dir = ROOT_PATH / "data" / "embeddings"
         os.makedirs(save_dir, exist_ok=True)
         if filename is None:
-            filename = f"{self.model.name}_{self.data_mode}.npz"
+            filename = f"{self.model.name}.npz"
         filepath = os.path.join(save_dir, filename)
         return filepath
     

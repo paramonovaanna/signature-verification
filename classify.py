@@ -32,12 +32,13 @@ def main(config):
     print(model)
 
     num_users = config.data.users[1] - config.data.users[0] + 1
+    data_modes = {"inference": config.data.mode}
 
     emb_extractor = EmbeddingsExtractor(config.embeddings,
         device=device,
         dataloaders=dataloaders, 
         model=model,
-        data_mode=config.data.mode,
+        data_modes=data_modes,
     )
     data = emb_extractor.extract()["inference"]
     if data.get("emb", None) is not None:
