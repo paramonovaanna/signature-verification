@@ -31,8 +31,8 @@ def main(config):
         model = SiameseNetwork(model).to(device)
     logger.info(model)
 
-    dataloader_factory = DataLoaderFactory(config, device)
-    dataloaders, batch_transforms = dataloader_factory.get_dataloaders(config.data.modes)
+    dataloader_factory = DataLoaderFactory(config=config, device=device, train_config=config.data)
+    dataloaders, batch_transforms = dataloader_factory.get_dataloaders()
 
     loss_function = instantiate(config.loss).to(device)
     metrics = instantiate(config.metrics)

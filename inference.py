@@ -34,8 +34,8 @@ def main(config):
 
     # setup data_loader instances
     # batch_transforms should be put on device
-    dataloader_factory = DataLoaderFactory(config, device)
-    dataloaders, batch_transforms = dataloader_factory.get_inference_dataloaders(config.data.mode)
+    dataloader_factory = DataLoaderFactory(config=config, device=device, test_config=config.data)
+    dataloaders, batch_transforms = dataloader_factory.get_inference_dataloaders()
 
     # build model architecture, then print to console
     model = instantiate(config.model._model_).to(device)

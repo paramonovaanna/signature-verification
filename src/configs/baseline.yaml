@@ -20,7 +20,7 @@ dataloaders:
 data: 
    split: 0.9
    users: [301, 1000]
-   modes: ["single", "single"]
+   modes: ["singles", "singles"]
 
 optimizer: 
    _target_: torch.optim.AdamW
@@ -31,7 +31,7 @@ trainer:
    epoch_len: null
    n_epochs: 50
    log_step: 500
-   monitor: "min test_EER"
+   monitor: "min validation_EER"
    early_stop: ${trainer.n_epochs}
    device: auto
    device_tensors: ["img", "labels"]

@@ -14,9 +14,12 @@ from src.datasets.partition_dataset import PartitionDataset
 class DataLoaderFactory:
     """Factory class for creating dataloaders for both regular and siamese training modes."""
     
-    def __init__(self, config, device: str):
+    def __init__(self, config, device, train_config=None, test_config=None):
         self.config = config
         self.device = device
+
+        self.train_config = train_config
+        self.test_config = test_config
 
         self.dataset = self._create_dataset()
         self.batch_transforms = self._setup_batch_transforms()
@@ -39,7 +42,7 @@ class DataLoaderFactory:
         """Create instance transforms for the model."""
         return instantiate(self.config.model.instance_transforms)
         
-    def get_dataloaders(self, modes):
+    def get_dataloaders(self):
         """Get dataloaders for training and validation.
         
         Args:
@@ -49,12 +52,12 @@ class DataLoaderFactory:
             Tuple of (dataloaders dict, batch_transforms)
         """
         train_data, test_data = self.dataset.random_split(
-            self.config.data.split, 
-            self.config.data.users
+            self.train_config.split, 
+            self.train_config.users
         )
-        datasets = {"train": PartitionDataset(train_data, self.instance_transforms.train, mode=modes[0])}
-        if self.config.data.split != 1.0:
-            datasets["test"] = PartitionDataset(test_data, self.instance_transforms.train, mode=modes[1])
+        datasets = {"train": PartitionDataset(train_data, self.instance_transforms.train, mode=self.train_config.modes[0])}
+        if self.train_config.split != 1.0:
+            datasets["validation"] = PartitionDataset(test_data, self.instance_transforms.train, mode=self.train_config.modes[1])
         dataloaders = {}
         for dataset_partition in datasets.keys():
             dataset = datasets[dataset_partition]
@@ -75,7 +78,7 @@ class DataLoaderFactory:
             dataloaders[dataset_partition] = partition_dataloader
         return dataloaders, self.batch_transforms
         
-    def get_inference_dataloaders(self, mode):
+    def get_inference_dataloaders(self):
         """Get dataloaders for inference.
         
         Args:
@@ -84,9 +87,9 @@ class DataLoaderFactory:
         Returns:
             Tuple of (dataloaders dict, batch_transforms)
         """
-        test_data, _ = self.dataset.random_split(1.0, self.config.data.users)
+        test_data, _ = self.dataset.random_split(1.0, self.test_config.users)
         
-        test_dataset = PartitionDataset(test_data, self.instance_transforms.test, mode=mode)
+        test_dataset = PartitionDataset(test_data, self.instance_transforms.test, mode=self.test_config.mode)
         assert self.config.dataloaders.batch_size <= len(test_dataset), (
                 f"The batch size ({self.config.dataloaders.batch_size}) cannot "
                 f"be larger than the dataset length ({len(test_dataset)})"

@@ -22,8 +22,8 @@ def main(config):
     else:
         device = config.embeddings.device
 
-    dataloader_factory = DataLoaderFactory(config, device)
-    dataloaders, batch_transforms = dataloader_factory.get_inference_dataloaders(config.data.mode)
+    dataloader_factory = DataLoaderFactory(config=config, device=device, test_config=config.data)
+    dataloaders, batch_transforms = dataloader_factory.get_inference_dataloaders()
 
     # build model architecture, then print to console
     model = instantiate(config.model._model_).to(device)

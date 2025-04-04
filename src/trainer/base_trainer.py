@@ -354,7 +354,8 @@ class BaseTrainer:
 
             if improved:
                 self.mnt_best = logs[self.mnt_metric]
-                self.optim_threshold = logs["test_Threshold"]
+                if logs.get("validation_Threshold", None) is not None:
+                    self.optim_threshold = logs["validation_Threshold"]
                 not_improved_count = 0
                 best = True
             else:
