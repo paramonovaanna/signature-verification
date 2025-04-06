@@ -1,5 +1,6 @@
 _model_:
-  _target_: src.models.ConvNeXt_S
+  _target_: src.models.ConvNeXt_21k
+  model_name: "convnext_small.fb_in22k"
   use_pretrained: True
   grayscale: True
   freeze_no: null

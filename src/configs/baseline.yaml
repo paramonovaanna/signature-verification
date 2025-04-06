@@ -1,5 +1,5 @@
 defaults:
-   - dataset: gpds_synthetic
+   - dataset: cedar
    - transforms: with_preprocess
    - model: convnext-tiny
    - loss: cross_entropy_loss
