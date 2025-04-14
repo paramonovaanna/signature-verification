@@ -11,7 +11,7 @@
 
 ## About
 
-This project focuses on offline signature verification using deep learning models ConvNeXt and CoAtNet, that have been pretrained on ImageNet-21k. It implements standalone and siamese training pipelines and several methods of signature verification, including CatBoost Classificator. We use GPDS_Synthetic, CEDAR and UTSig datasets.
+This project focuses on offline signature verification using deep learning models [ConvNeXt](https://arxiv.org/abs/2201.03545) and [CoAtNet](https://arxiv.org/abs/2106.04803), that have been pretrained on ImageNet-21k. It implements standalone and siamese training pipelines and several methods of signature verification, including CatBoost Classificator. We use GPDS_Synthetic, CEDAR and UTSig datasets.
 
 ## Installation
 
